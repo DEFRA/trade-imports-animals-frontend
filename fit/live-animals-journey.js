@@ -30,6 +30,7 @@ import { commodityLabel } from '../src/server/app/sets/live-animals/journeys/lin
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as additionalDetailsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.en.js'
 import { copy as addressesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.en.js'
+import { copy as checkAnswersCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/check-answers/copy/copy.en.js'
 import { copy as contactCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/contact/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
 import { copy as documentsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.en.js'
@@ -39,7 +40,8 @@ import { copy as originCopy } from '../src/server/app/sets/live-animals/journeys
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
 import {
   COMMERCIAL,
-  PRIVATE
+  PRIVATE,
+  parties
 } from '../src/server/app/services/transporters/index.js'
 
 import { signIn } from './sign-in.js'
@@ -422,6 +424,121 @@ export const JOURNEY_FORM_SELECTOR = 'form[method="post"]'
  * @returns {import('@playwright/test').Locator}
  */
 export const journeyFormOf = (page) => page.locator(JOURNEY_FORM_SELECTOR)
+
+/**
+ * Posts the page's journey form to the declaration, with each given field
+ * replacing the form's own field of that name. Every other field the form
+ * holds, the concurrency token included, is sent as the page rendered it.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {Record<string, string>} fields - the field names and values to send.
+ */
+export const postJourneyFormToDeclaration = async (page, fields) => {
+  const declarationPath = new URL(journeyUrl(page, 'declaration'), page.url())
+    .pathname
+  await page.evaluate(
+    ({ action, formSelector, sentFields }) => {
+      const form = document.querySelector(formSelector)
+      form.action = action
+      for (const [name, value] of Object.entries(sentFields)) {
+        for (const existing of form.querySelectorAll(`[name="${name}"]`)) {
+          existing.remove()
+        }
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = name
+        input.value = value
+        form.append(input)
+      }
+      form.submit()
+    },
+    {
+      action: declarationPath,
+      formSelector: JOURNEY_FORM_SELECTOR,
+      sentFields: fields
+    }
+  )
+}
+
+export const reviewCardFor = (page, headingName) =>
+  page.getByRole('region', { name: headingName, exact: true })
+
+export const expectMainImportReasonAndAdditionalDetailsNamed = async (page) => {
+  for (const { message, anchor } of [
+    {
+      message: checkAnswersCopy.errors.cards.mainImportReason,
+      anchor: '#main-import-reason'
+    },
+    {
+      message: checkAnswersCopy.errors.cards.additionalDetails,
+      anchor: '#additional-details'
+    }
+  ]) {
+    await expect(page.getByRole('link', { name: message })).toHaveAttribute(
+      'href',
+      anchor
+    )
+    await expect(page.locator(anchor).getByText(message)).toBeVisible()
+  }
+}
+
+export const formControls = (form) => form.getByRole('button')
+
+export const reviewFootControls = (page) =>
+  formControls(page.getByRole('main').locator('form').last())
+
+export const expectDraftReviewEndsWithContinue = (page) =>
+  expect(reviewFootControls(page)).toHaveText([checkAnswersCopy.submit.button])
+
+export const notificationReferenceHeading = (page) =>
+  page.getByRole('heading', {
+    level: 1,
+    name: journeyIdFromPage(page),
+    exact: true
+  })
+
+export const viewHeaderTag = (page, statusText) =>
+  page.getByRole('main').getByText(statusText, { exact: true })
+
+export const formSubmittedBy = async (button) => {
+  const formId = await button.getAttribute('form')
+  const page = button.page()
+  return {
+    form: page.locator(`form[id="${formId}"]`),
+    submitButtons: page.locator(`button[form="${formId}"]`)
+  }
+}
+
+export const journeyStrip = (page) => page.locator('.app-journey-strip')
+
+export const journeyStripStatus = (page, statusText) =>
+  journeyStrip(page).getByText(statusText, { exact: true })
+
+export const expectDraftReview = async (page) => {
+  await expect(notificationReferenceHeading(page)).toBeVisible()
+  await expect(
+    viewHeaderTag(page, sharedAppCopy.journeyStrip.draft)
+  ).toBeVisible()
+  await expectDraftReviewEndsWithContinue(page)
+}
+
+export const INFECTED_DOCUMENT_FILE_NAME = 'virus-invoice.pdf'
+export const STILL_SCANNING_DOCUMENT_FILE_NAME = 'never-scans.pdf'
+
+/**
+ * An ITAHC entry for the documents page, with the reference and file name the
+ * test chooses.
+ *
+ * @param {string} reference
+ * @param {string} filename
+ * @returns {{ accompanyingDocumentReference: string, accompanyingDocumentType: string, accompanyingDocumentDateOfIssue: { day: string, month: string, year: string }, filename: string }}
+ */
+export const documentNamed = (reference, filename) => ({
+  accompanyingDocumentReference: reference,
+  accompanyingDocumentType: 'ITAHC',
+  accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
+  filename
+})
 
 export const rowFor = (page, label) =>
   page
@@ -886,7 +1003,7 @@ export const addDocument = async (page, entry) => {
   await page.getByRole('button', { name: 'Save and add another' }).click()
 }
 
-const save = async (page) => {
+export const save = async (page) => {
   await saveAndContinue(page).click()
 }
 
@@ -928,13 +1045,21 @@ export const LANDINGS = {
 export const expectLanding = async (page, { slug, title }) => {
   await expect(page).toHaveURL(urlUnderBase(`/notifications/[^/]+/${slug}`))
   await expect(
-    page.getByRole('heading', { name: title, exact: true })
+    page.getByRole('heading', {
+      name: title,
+      exact: true
+    })
   ).toBeVisible()
 }
 
 export const saveAndExpectLanding = async (page, landing) => {
   await save(page)
   await expectLanding(page, landing)
+}
+
+export const saveAndExpectOverview = async (page) => {
+  await saveAndReturnToHub(page).click()
+  await expectOverview(page)
 }
 
 export const openOverview = async (page) => {
@@ -1040,6 +1165,27 @@ export const identifyAnimalsByMicrochip = async (
 }
 
 /**
+ * Reaches the review with each chosen species at its count and no animal
+ * identified.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {Array<{ species: object, count: string }>} speciesCounts - the
+ * species rows to select and the number of animals each holds.
+ */
+export const openReviewWithSpeciesCounts = async (page, speciesCounts) => {
+  await openCommodityDetails(
+    page,
+    speciesCounts.map(({ species }) => species)
+  )
+  for (const { species, count } of speciesCounts) {
+    await (await numberOfAnimalsFor(page, species)).fill(count)
+  }
+  await saveAndContinue(page).click()
+  await openOverview(page)
+  await openReviewFromHub(page)
+}
+
+/**
  * The saved-animals table row for the numbered animal of a species.
  *
  * @param {import('@playwright/test').Page} page
@@ -1071,26 +1217,46 @@ export const removeAnimalRow = async (page, chosen, number) => {
   return row
 }
 
-export const answerImportReason = async (page) => {
+export const answerImportReason = async (
+  page,
+  { leaveUnanswered = [] } = {}
+) => {
+  if (leaveUnanswered.includes('mainImportReason')) {
+    await saveAndExpectOverview(page)
+    return
+  }
   await page.getByRole('radio', { name: 'Internal market' }).check()
   await page.getByRole('radio', { name: 'Breeding' }).check()
   await saveAndExpectLanding(page, LANDINGS.commodityDetails)
 }
 
-export const answerAdditionalDetails = async (page) => {
+export const answerAdditionalDetails = async (
+  page,
+  { leaveUnanswered = [] } = {}
+) => {
+  const leavesCertifiedFor = leaveUnanswered.includes('certifiedFor')
+  const leavesUnweaned = leaveUnanswered.includes('unweaned')
   await expect(
     page.getByRole('heading', {
       name: LANDINGS.additionalDetails.title,
       exact: true
     })
   ).toBeVisible()
-  await page.getByRole('radio', { name: 'Slaughter' }).check()
-  await page
-    .getByRole('group', {
-      name: 'Does the consignment contain any unweaned animals?'
-    })
-    .getByRole('radio', { name: 'No' })
-    .check()
+  if (!leavesCertifiedFor) {
+    await page.getByRole('radio', { name: 'Slaughter' }).check()
+  }
+  if (!leavesUnweaned) {
+    await page
+      .getByRole('group', {
+        name: 'Does the consignment contain any unweaned animals?'
+      })
+      .getByRole('radio', { name: 'No' })
+      .check()
+  }
+  if (leavesCertifiedFor || leavesUnweaned) {
+    await saveAndExpectOverview(page)
+    return
+  }
   await saveAndExpectLanding(page, LANDINGS.arrivalDetails)
 }
 
@@ -1107,7 +1273,7 @@ export const addPlaceOfDestination = async (page) => {
   await saveAndExpectLanding(page, LANDINGS.addresses)
 }
 
-export const answerRolesAndAddresses = async (page) => {
+export const answerConsignmentAddresses = async (page) => {
   const parties = [
     ['Add a consignor', partyPickerName(values.consignor)],
     ['Add a place of origin', partyPickerName(values.placeOfOrigin)],
@@ -1317,6 +1483,43 @@ export const openTransporterList = async (page) => {
   ).toBeVisible()
 }
 
+export const cannedPrivateTransporter = parties().find(
+  (record) => record.type === PRIVATE
+)
+
+export const cannedCommercialTransporter = parties().find(
+  (record) => record.type === COMMERCIAL
+)
+
+/**
+ * Saves the transporter list with a pick, returns to the overview and expects
+ * the transporter list to show that transporter chosen.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ name: string }} transporter - the listed transporter picked.
+ */
+export const saveAndExpectTransporterChosen = async (page, transporter) => {
+  await saveAndExpectOverview(page)
+  await page.goto(journeyUrl(page, 'transporters'))
+  await expect(
+    page.getByRole('radio', { name: transporter.name })
+  ).toBeChecked()
+}
+
+/**
+ * Picks a transporter from the transporter list of a fresh notification
+ * arriving by air, saves it, returns to the overview and expects the
+ * transporter list to show that transporter chosen.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ name: string }} transporter - the listed transporter to pick.
+ */
+export const saveTransporterFromList = async (page, transporter) => {
+  await openTransporterList(page)
+  await page.getByRole('radio', { name: transporter.name }).check()
+  await saveAndExpectTransporterChosen(page, transporter)
+}
+
 /**
  * Opens the transporter type question from the transporter list.
  *
@@ -1394,13 +1597,19 @@ export const answerContactAddress = async (page) => {
  * Answers the whole notification one task row at a time.
  *
  * @param {import('@playwright/test').Page} page
- * @param {{ skipAnimalIdentification?: boolean, skipTransitCountries?: boolean }} [options] -
+ * @param {{ skipAnimalIdentification?: boolean, skipTransitCountries?: boolean, leaveUnanswered?: Array<'mainImportReason' | 'certifiedFor' | 'unweaned'> }} [options] -
  *   pass `skipAnimalIdentification` to leave the identification row
- *   untouched, and `skipTransitCountries` to add no transit country.
+ *   untouched, `skipTransitCountries` to add no transit country, and
+ *   `leaveUnanswered` to leave the named questions unchosen, leaving their
+ *   pages by Save and return to overview.
  */
 export const completeAnswerSections = async (
   page,
-  { skipAnimalIdentification = false, skipTransitCountries = false } = {}
+  {
+    skipAnimalIdentification = false,
+    skipTransitCountries = false,
+    leaveUnanswered = []
+  } = {}
 ) => {
   const task = (name) => page.getByRole('link', { name }).click()
 
@@ -1420,14 +1629,14 @@ export const completeAnswerSections = async (
   }
 
   await task(hubCopy.rows.importReason.title)
-  await answerImportReason(page)
+  await answerImportReason(page, { leaveUnanswered })
   await openOverview(page)
   await task('Additional details')
-  await answerAdditionalDetails(page)
+  await answerAdditionalDetails(page, { leaveUnanswered })
   await openOverview(page)
 
-  await task('Roles and addresses')
-  await answerRolesAndAddresses(page)
+  await task(hubCopy.rows.addresses.title)
+  await answerConsignmentAddresses(page)
   await openOverview(page)
 
   await task('Arrival details')
@@ -1453,6 +1662,114 @@ export const completeAnswerSections = async (
 
 export const openReviewFromHub = async (page) => {
   await page.getByRole('button', { name: 'Review and submit' }).click()
+  await expect(page).toHaveURL(
+    urlUnderBase('/notifications/[^/]+/notification-view')
+  )
+}
+
+const uploadItahc = async (page) => {
+  const itahc = documentNamed('GBHC0000000001', 'itahc.pdf')
+  await openFromOverviewRow(page, hubCopy.rows.documents.title)
+  await addDocument(page, itahc)
+  await saveAndExpectOverview(page)
+  await openFromOverviewRow(page, hubCopy.rows.documents.title)
+  await expect(
+    documentRowFor(page, itahc.accompanyingDocumentReference)
+  ).toContainText(documentsCopy.scanTags.complete)
+  await saveAndExpectOverview(page)
+}
+
+/**
+ * Answers every section, reviews and declares a new notification.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ withItahc?: boolean }} [options] - `withItahc` uploads an ITAHC
+ * before the review.
+ * @returns {Promise<string>} the submitted notification's reference.
+ */
+export const submitCompleteNotification = async (
+  page,
+  { withItahc = false } = {}
+) => {
+  await startNotification(page)
+  await completeAnswerSections(page)
+  if (withItahc) {
+    await uploadItahc(page)
+  }
+  await openReviewFromHub(page)
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page
+    .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+    .check()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  return journeyIdFromPage(page)
+}
+
+export const amendFromList = async (page, reference) => {
+  await page.goto(BASE)
+  await page
+    .getByRole('button', { name: `Amend notification ${reference}` })
+    .click()
+}
+
+/**
+ * Opens the page's current URL in a new signed-in context with JavaScript
+ * switched off, hands that page to `use`, and closes the context afterwards.
+ *
+ * @param {import('@playwright/test').Page} page - the signed-in page to reopen
+ * @param {import('@playwright/test').Browser} browser
+ * @param {(plainPage: import('@playwright/test').Page) => Promise<void>} use
+ */
+export const withoutJavaScript = async (page, browser, use) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    storageState: await page.context().storageState()
+  })
+  try {
+    const plainPage = await context.newPage()
+    await plainPage.goto(page.url())
+    await use(plainPage)
+  } finally {
+    await context.close()
+  }
+}
+
+export const deleteFromReview = async (page, confirmationTitle) => {
+  await page
+    .getByRole('button', {
+      name: sharedAppCopy.notificationActions.delete.text,
+      exact: true
+    })
+    .click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: confirmationTitle })
+  ).toBeVisible()
+}
+
+export const changeOriginOnAmendment = async (page, internalReference) => {
+  await page.getByRole('link', { name: 'Change origin of import' }).click()
+  await chooseCountryOfOrigin(page, 'France')
+  await page
+    .getByLabel('Your internal reference for this consignment (optional)')
+    .fill(internalReference)
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+  await openNotificationView(page)
+}
+
+export const cancelAmendLink = (page) =>
+  page.locator('.app-journey-strip').getByRole('link', {
+    name: sharedAppCopy.journeyStrip.cancelAmend,
+    exact: true
+  })
+
+export const amendChangeOriginAndOpenCancel = async (page, reference) => {
+  await amendFromList(page, reference)
+  await expect(cancelAmendLink(page)).toBeVisible()
+  await changeOriginOnAmendment(page, 'DiscardMe99')
+  await cancelAmendLink(page).click()
 }
 
 export const saveAndContinue = (page) =>

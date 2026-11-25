@@ -5,7 +5,7 @@ export const copy = {
     aboutTheConsignment: 'Am y llwyth',
     descriptionOfTheGoods: 'Disgrifiad o’r nwyddau',
     additionalDetails: 'Manylion y nwyddau',
-    consignmentParties: 'Partïon y llwyth',
+    addresses: 'Cyfeiriadau',
     movement: 'Symudiad',
     transportAndArrival: 'Cludiant a chyrraedd',
     newTransporter: 'Ychwanegu cludwr newydd',

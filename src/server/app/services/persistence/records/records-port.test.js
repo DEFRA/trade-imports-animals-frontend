@@ -7,6 +7,8 @@ import {
   SUBMITTED
 } from '../../../engine/persistence/records.js'
 import { obligationSet } from '../../../model/obligations/manifest.js'
+import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
+import { itahcAnswers } from '../../../engine/test-support.js'
 
 const { countryOfOrigin } = obligationSet()
 
@@ -333,5 +335,111 @@ describe('records concurrency token', () => {
     )
 
     expect(saved.fulfilment).toEqual(originFulfilment('DE'))
+  })
+})
+
+describe('records answersDifferFromSubmitted', () => {
+  beforeEach(() => records.clear())
+
+  const submittedWithOrigin = async (value) => {
+    const { journeyId } = await records.create()
+    await records.replaceFulfilment(journeyId, originFulfilment(value))
+    await finaliseAtLoadedToken(journeyId)
+    return journeyId
+  }
+  const differs = async (journeyId) =>
+    (await records.load({ journeyId })).answersDifferFromSubmitted
+
+  it('Should be false when an amendment starts', async () => {
+    const journeyId = await submittedWithOrigin('FR')
+
+    const amended = await records.amend(journeyId)
+
+    expect(amended.answersDifferFromSubmitted).toBe(false)
+  })
+
+  it('Should be true once a notification answer differs and false once it is put back', async () => {
+    const journeyId = await submittedWithOrigin('FR')
+    await records.amend(journeyId)
+
+    await records.replaceFulfilment(journeyId, originFulfilment('DE'))
+    expect(await differs(journeyId)).toBe(true)
+
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
+    expect(await differs(journeyId)).toBe(false)
+  })
+
+  it('Should stay false when only the uploaded documents change', async () => {
+    const journeyId = await submittedWithOrigin('FR')
+    await records.amend(journeyId)
+
+    await records.replaceFulfilment(
+      journeyId,
+      assembleFulfilments({
+        countryOfOrigin: 'FR',
+        ...itahcAnswers()
+      })
+    )
+
+    expect(await differs(journeyId)).toBe(false)
+  })
+
+  it('Should be false after resubmitting a changed amendment and when the next amendment starts', async () => {
+    const journeyId = await submittedWithOrigin('FR')
+    await records.amend(journeyId)
+    await records.replaceFulfilment(journeyId, originFulfilment('DE'))
+    expect(await differs(journeyId)).toBe(true)
+
+    await finaliseAtLoadedToken(journeyId)
+    expect(await differs(journeyId)).toBe(false)
+
+    const amendedAgain = await records.amend(journeyId)
+    expect(amendedAgain.answersDifferFromSubmitted).toBe(false)
+  })
+
+  it('Should be false after a changed amendment is cancelled', async () => {
+    const journeyId = await submittedWithOrigin('FR')
+    await records.amend(journeyId)
+    await records.replaceFulfilment(journeyId, originFulfilment('DE'))
+    expect(await differs(journeyId)).toBe(true)
+
+    const cancelled = await records.cancelAmend(journeyId)
+
+    expect(cancelled.answersDifferFromSubmitted).toBe(false)
+    expect(await differs(journeyId)).toBe(false)
+  })
+
+  it('Should be false on a draft and on a submitted notification', async () => {
+    const { journeyId } = await records.create()
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
+    expect(await differs(journeyId)).toBe(false)
+
+    await finaliseAtLoadedToken(journeyId)
+    expect(await differs(journeyId)).toBe(false)
+  })
+})
+
+describe('records durable port — submitted status', () => {
+  beforeEach(() => records.clear())
+
+  it('Should record Submitted, and again when resubmitted after an amendment', async () => {
+    const { journeyId } = await records.create()
+    const submitted = await finaliseAtLoadedToken(journeyId)
+    await records.amend(journeyId)
+
+    const resubmitted = await finaliseAtLoadedToken(journeyId)
+
+    expect(submitted.status).toBe(SUBMITTED)
+    expect(resubmitted.status).toBe(SUBMITTED)
+  })
+
+  it('Should restore Submitted when cancelling an amendment of a submitted notification', async () => {
+    const { journeyId } = await records.create()
+    await finaliseAtLoadedToken(journeyId)
+    await records.amend(journeyId)
+
+    const restored = await records.cancelAmend(journeyId)
+
+    expect(restored.status).toBe(SUBMITTED)
   })
 })

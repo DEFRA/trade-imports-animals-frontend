@@ -54,6 +54,7 @@ const canonical = ({
   fulfilments,
   status,
   created: createdAt,
+  answersDifferFromSubmitted: false,
   submittedAt,
   concurrencyToken
 })
@@ -93,7 +94,8 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       createdAt,
       submittedAt: null,
       concurrencyToken: 0,
-      fulfilment: {}
+      fulfilment: {},
+      answersDifferFromSubmitted: false
     })
   })
 

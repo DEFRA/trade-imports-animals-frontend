@@ -251,11 +251,11 @@ describe('#nextStepLanding — where Save and continue lands', () => {
     }
   )
 
-  it('Should go from Roles and addresses to Contact address even when every other task is complete', () => {
+  it('Should go from Consignment addresses to Contact address even when every other task is complete', () => {
     expect(nextSlug('addresses', completeAnswers)).toBe(CONTACT_SLUG)
   })
 
-  it('Should go from the CPH number page on to Roles and addresses', () => {
+  it('Should go from the CPH number page on to Consignment addresses', () => {
     expect(nextSlug('cphNumber', completeAnswers)).toBe('addresses')
   })
 

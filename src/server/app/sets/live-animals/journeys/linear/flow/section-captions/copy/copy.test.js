@@ -13,7 +13,7 @@ describe('section-caption copy modules', () => {
       aboutTheConsignment: 'About the consignment',
       descriptionOfTheGoods: 'Description of the goods',
       additionalDetails: 'Commodity details',
-      consignmentParties: 'Consignment parties',
+      addresses: 'Addresses',
       movement: 'Movement',
       transportAndArrival: 'Transport and arrival',
       newTransporter: 'Add a new transporter',

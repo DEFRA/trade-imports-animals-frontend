@@ -1,9 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import {
-  addressBookAnswering,
-  resetMocksAndConfigAfterTests
-} from '../../engine/test-support.js'
+import { resetMocksAndConfigAfterTests } from '../../engine/test-support.js'
+import { addressBookAnswering } from '../../engine/address-book-test-support.js'
 import {
   COMMERCIAL_TRANSPORTER_COUNTRY_CODE,
   COMMERCIAL_TRANSPORTER_COUNTRY_NAME

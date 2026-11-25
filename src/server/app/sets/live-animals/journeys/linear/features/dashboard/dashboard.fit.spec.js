@@ -2,13 +2,12 @@ import { expect, test } from '@playwright/test'
 import {
   ARRIVAL_DATE_IN_WINDOW_DISPLAY,
   BASE,
-  completeAnswerSections,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
-  openReviewFromHub,
   signIn,
   startNotification,
+  submitCompleteNotification,
   urlUnderBase,
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -24,26 +23,22 @@ const PAGE_SIZE = 20
 const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
 const DESKTOP_BREAKPOINT_WIDTH = 769
 
-const submitNotification = async (page) => {
-  await completeAnswerSections(page)
-  await openReviewFromHub(page)
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await page
-    .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
-    .check()
-  await page.getByRole('button', { name: 'Continue' }).click()
-}
-
-const stageSubmittedNotification = async (page) => {
-  await startNotification(page)
-  await submitNotification(page)
-  const reference = journeyIdFromPage(page)
+const stageSubmittedNotification = async (page, { withItahc = true } = {}) => {
+  const reference = await submitCompleteNotification(page, { withItahc })
   await page.goto(BASE)
   return reference
 }
 
 const actionFor = (page, role, action, reference) =>
   page.getByRole(role, { name: `${action} ${copy.actionHidden(reference)}` })
+
+const expectSubmittedRowActions = async (page, reference) => {
+  await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
+  await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
+  await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
+  await expect(actionFor(page, 'button', COPY_AS_NEW, reference)).toBeVisible()
+  await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+}
 
 const expectDashboardNotToOverflow = (page) =>
   expectNoHorizontalOverflow(page.locator('html'), 'Dashboard')
@@ -132,13 +127,18 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await expect(
       page.getByText(values.consignee.name, { exact: true })
     ).toBeVisible()
-    await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
-    await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
-    await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
-    await expect(
-      actionFor(page, 'button', COPY_AS_NEW, reference)
-    ).toBeVisible()
-    await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+    await expectSubmittedRowActions(page, reference)
+  })
+
+  test('a notification submitted without an ITAHC shows Submitted and the four submitted actions', async ({
+    page
+  }) => {
+    test.slow()
+    const reference = await stageSubmittedNotification(page, {
+      withItahc: false
+    })
+
+    await expectSubmittedRowActions(page, reference)
   })
 
   test('dashboard does not overflow horizontally at desktop', async ({

@@ -1,9 +1,9 @@
 export const copy = {
   title: 'Review your notification',
+  resubmittingTitle: 'Review before re-submitting',
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
   change: 'Change',
-  editDetails: 'Edit details',
   cancelAmend: {
     successTitle: 'Success',
     successBody:
@@ -13,41 +13,31 @@ export const copy = {
     aboutTheConsignment: '1. About the consignment',
     descriptionOfTheGoods: '2. Description of the goods',
     transportAndArrival: '3. Transport and arrival',
-    documents: '4. Documents',
-    consignmentParties: '5. Consignment parties',
+    documents: '4. Uploaded documents',
+    addresses: '5. Addresses',
     contactAddress: '6. Contact address'
   },
-  groups: {
-    whereFrom: 'Where is this consignment coming from?',
+  cards: {
+    originOfImport: 'Origin of import',
     mainImportReason: 'Main import reason',
-    commodityDetails: 'Commodity details',
+    whatAreYouImporting: 'What are you importing?',
     additionalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
-    transitCountries: 'Transit countries',
     transportDetails: 'Transport details',
-    uploadDocuments: 'Upload documents',
-    rolesAndAddresses: 'Roles and addresses',
-    contactAddress: 'Contact address for this consignment'
+    consignmentAddresses: 'Consignment addresses',
+    contactAddress: 'Contact address'
   },
-  cards: {
-    importDetails: 'Import details',
-    reasonForImport: 'Reason for import',
-    additionalAnimalDetails: 'Additional animal details',
-    arrivalDetails: 'Arrival details',
+  groups: {
     transitCountries: 'Transit countries',
-    transportDetails: 'Transport details',
-    rolesAndAddresses: 'Roles and addresses',
-    contactAddress: 'Contact address for this consignment',
-    documents: 'Uploaded documents'
+    permanentAddress: 'Permanent address'
   },
   rows: {
     countryOfOrigin: 'Country of origin',
-    regionCodeRequired: 'Region of origin code required',
     regionCode: 'Region of origin code',
     internalReference: 'Internal reference number',
     certifiedFor: 'Certified for',
     unweaned: 'Includes unweaned animals',
-    reasonForImport: 'Reason for import',
+    mainImportReason: 'Main import reason',
     purpose: 'Purpose in the market',
     destinationCountry: 'Destination country',
     exitDate: 'Exit date',
@@ -56,7 +46,7 @@ export const copy = {
     speciesCommonName: 'Common name',
     species: 'Species',
     numberOfAnimals: 'Number of animals',
-    numberOfPackages: 'Number of packages',
+    numberOfPackages: 'Number of packages (when required)',
     portOfEntry: 'Port of entry',
     arrivalDate: 'Arrival date at port of entry',
     meansOfTransport: 'Means of transport to the port of entry',
@@ -78,47 +68,67 @@ export const copy = {
     documentReference: 'Document reference',
     documentType: 'Document type',
     dateOfIssue: 'Date of issue',
-    attachmentType: 'Attachment type'
+    attachment: 'Attachment'
   },
-  identifierTable: {
+  identificationDetails: {
     animalColumn: 'Animal',
-    animalN: (n) => `Animal ${n}`,
-    heading: 'Animal details'
+    heading: 'Identification details'
   },
+  editDetails: 'Edit details',
   documentN: (n) => `Document ${n}`,
-  documentsEmpty: 'You have not added any documents yet.',
   hidden: {
     cards: {
-      importDetails: 'import details',
-      reasonForImport: 'reason for import',
-      additionalAnimalDetails: 'additional animal details',
+      originOfImport: 'origin of import',
+      mainImportReason: 'main import reason',
+      whatAreYouImporting: 'what are you importing',
+      additionalDetails: 'additional details',
       arrivalDetails: 'arrival details',
-      transitCountries: 'transit countries',
       transportDetails: 'transport details',
-      rolesAndAddresses: 'roles and addresses',
-      contactAddress: 'contact address for this consignment',
-      documents: 'uploaded documents'
+      consignmentAddresses: 'consignment addresses',
+      contactAddress: 'contact address'
     },
-    commodity: (n) => `commodity ${n}`
+    document: (n) => `document ${n}`,
+    rows: {
+      transitCountries: 'transit countries'
+    },
+    commodity: (title) => `commodity ${title}`,
+    numberOfAnimals: (species) => `number of animals for ${species}`,
+    identificationDetails: (species) => `identification details for ${species}`
   },
   submit: {
     button: 'Continue'
   },
+  warningIcon: 'Warning',
+  viewHeader: {
+    amend: 'Amend this notification',
+    dateCreated: (date) => `Date created: ${date}`,
+    dateSubmitted: (date) => `Date submitted: ${date}`
+  },
+  importReferences: {
+    heading: 'Import reference numbers',
+    warning:
+      'You must use the correct reference and code on the customs declaration or your consignment will be delayed.',
+    notificationReference: 'Notification reference',
+    customsDocumentCode: 'Customs document code'
+  },
   errors: {
     prefix: 'Error:',
     cards: {
-      importDetails: 'Complete import details',
-      reasonForImport: 'Complete reason for import',
-      additionalAnimalDetails: 'Complete additional animal details',
-      species: 'Complete species details',
+      originOfImport: 'Complete origin of import',
+      mainImportReason: 'Complete main import reason',
+      additionalDetails: 'Complete additional details',
+      whatAreYouImporting: 'Complete what are you importing?',
+      commodityDetails: 'Complete commodity details',
       arrivalDetails: 'Complete arrival details',
-      transitCountries: 'Complete transit countries',
       transportDetails: 'Complete transport details',
-      rolesAndAddresses: 'Complete roles and addresses',
+      consignmentAddresses: 'Complete consignment addresses',
       contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
     },
     species: {
+      noCount: (species) => `Enter the number of animals for ${species}`,
+      noIdentifier: (species) =>
+        `Enter at least 1 animal identifier for ${species}`,
       notListed: (speciesWithCodes) =>
         `${speciesWithCodes} can no longer be selected. Select a species from the list.`
     },

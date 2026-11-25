@@ -1,16 +1,17 @@
 import { expect, test } from '@playwright/test'
 import {
+  amendChangeOriginAndOpenCancel,
+  amendFromList,
   BASE,
-  chooseCountryOfOrigin,
-  completeAnswerSections,
+  cancelAmendLink,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
-  openNotificationView,
   openReviewFromHub,
   saveAndReturnToHub,
   signIn,
-  startNotification,
-  values
+  submitCompleteNotification,
+  values,
+  withoutJavaScript
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
@@ -19,11 +20,7 @@ import { copy } from './copy/copy.en.js'
 
 const TAG = '.govuk-tag'
 const strip = (page) => page.locator('.app-journey-strip')
-const cancelAmendLink = (page) =>
-  strip(page).getByRole('link', {
-    name: sharedCopy.journeyStrip.cancelAmend,
-    exact: true
-  })
+const viewHeaderTag = (page) => page.locator(`main ${TAG}`)
 
 const expectAmendStrip = async (page) => {
   await expect(strip(page).locator(TAG)).toHaveText(
@@ -32,43 +29,13 @@ const expectAmendStrip = async (page) => {
   await expect(cancelAmendLink(page)).toBeVisible()
 }
 
-const submitNotification = async (page) => {
-  await startNotification(page)
-  await completeAnswerSections(page)
-  await openReviewFromHub(page)
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await page
-    .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
-    .check()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  return journeyIdFromPage(page)
-}
-
-const amendAndOpenCancel = async (page, reference) => {
-  await page.goto(BASE)
-  await page
-    .getByRole('button', { name: `Amend notification ${reference}` })
-    .click()
-  await expectAmendStrip(page)
-  await page.getByRole('link', { name: 'Change import details' }).click()
-  await expectAmendStrip(page)
-  await chooseCountryOfOrigin(page, 'France')
-  await page
-    .getByLabel('Your internal reference for this consignment (optional)')
-    .fill('DiscardMe99')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'What are you importing?' })
-  ).toBeVisible()
-  await openNotificationView(page)
-  await cancelAmendLink(page).click()
-}
-
 test.describe('cancel-amend feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    const reference = await submitNotification(page)
-    await amendAndOpenCancel(page, reference)
+    const reference = await submitCompleteNotification(page, {
+      withItahc: true
+    })
+    await amendChangeOriginAndOpenCancel(page, reference)
   })
 
   test('renders confirmation copy, actions and review back link', async ({
@@ -89,7 +56,7 @@ test.describe('cancel-amend feature', () => {
     await page.getByRole('button', { name: copy.noLink }).click()
 
     await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
+      page.getByRole('heading', { name: checkAnswersCopy.resubmittingTitle })
     ).toBeVisible()
     await expectAmendStrip(page)
     await expect(page.getByText('DiscardMe99', { exact: true })).toBeVisible()
@@ -119,7 +86,9 @@ test.describe('cancel-amend feature', () => {
     await expect(
       page.getByText(checkAnswersCopy.cancelAmend.successBody)
     ).toBeVisible()
-    await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
+    await expect(viewHeaderTag(page)).toHaveText(
+      sharedCopy.journeyStrip.submitted
+    )
     await expect(page.getByText('DiscardMe99', { exact: true })).toHaveCount(0)
     await expect(
       page.getByText(values.internalReferenceNumber, { exact: true })
@@ -153,7 +122,9 @@ test.describe('cancel-amend feature', () => {
     page
   }) => {
     await page.getByRole('button', { name: copy.confirmButton }).click()
-    await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
+    await expect(viewHeaderTag(page)).toHaveText(
+      sharedCopy.journeyStrip.submitted
+    )
 
     await expectNoSeriousOrCriticalViolations(
       page,
@@ -167,11 +138,10 @@ test.describe('amend review', () => {
     page
   }) => {
     await signIn(page)
-    const reference = await submitNotification(page)
-    await page.goto(BASE)
-    await page
-      .getByRole('button', { name: `Amend notification ${reference}` })
-      .click()
+    const reference = await submitCompleteNotification(page, {
+      withItahc: true
+    })
+    await amendFromList(page, reference)
     await page.goto(`${BASE}/notifications/${reference}/port-of-entry`)
     await page.getByLabel('Arrival date at port of entry').fill('')
     await saveAndReturnToHub(page).click()
@@ -203,29 +173,20 @@ test.describe('cancel-amend feature without JavaScript', () => {
     browser
   }) => {
     await signIn(page)
-    const reference = await submitNotification(page)
-    await page.goto(BASE)
-    await page
-      .getByRole('button', { name: `Amend notification ${reference}` })
-      .click()
-    const context = await browser.newContext({
-      javaScriptEnabled: false,
-      storageState: await page.context().storageState()
+    const reference = await submitCompleteNotification(page, {
+      withItahc: true
     })
-    try {
-      const noJs = await context.newPage()
-
+    await amendFromList(page, reference)
+    await withoutJavaScript(page, browser, async (noJs) => {
       await noJs.goto(`${BASE}/notifications/${reference}/origin`)
       await cancelAmendLink(noJs).click()
       await expect(noJs).toHaveURL(/\/cancel-amend(?:\?from=[^#]*)?$/)
       await noJs.getByRole('button', { name: copy.confirmButton }).click()
 
       await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)
-      await expect(strip(noJs).locator(TAG)).toHaveText(
+      await expect(viewHeaderTag(noJs)).toHaveText(
         sharedCopy.journeyStrip.submitted
       )
-    } finally {
-      await context.close()
-    }
+    })
   })
 })

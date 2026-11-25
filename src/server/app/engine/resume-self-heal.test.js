@@ -9,7 +9,7 @@ import { configureReadyForCheckYourAnswers } from './read.js'
 import { journeyRequest, recordingH } from './test-support.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 
-describe('re-entry self-heal (nothing derived is stored)', () => {
+describe('re-entry self-heal from canonical fulfilment', () => {
   beforeEach(async () => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
@@ -34,7 +34,7 @@ describe('re-entry self-heal (nothing derived is stored)', () => {
     expect(result.scope.has('countryOfOrigin')).toBe(true)
   })
 
-  it('Should expose only canonical durable fields — nothing derived is persisted', async () => {
+  it('Should expose exactly the journey keys a loaded journey carries', async () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(
       journeyId,
@@ -44,6 +44,7 @@ describe('re-entry self-heal (nothing derived is stored)', () => {
     const result = await get(journeyRequest(journeyId), recordingH())
 
     expect(Object.keys(result.journey).sort()).toEqual([
+      'answersDifferFromSubmitted',
       'concurrencyToken',
       'createdAt',
       'fulfilment',

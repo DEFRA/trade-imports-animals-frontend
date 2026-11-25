@@ -19,6 +19,7 @@ import {
   formatDateText
 } from '../../../../../../../lib/validate/calendar.js'
 
+import { readDate } from '../../../../../../../shared/kit.js'
 import { copy } from '../copy/copy.en.js'
 import { arrivalWindow } from './arrival-window.js'
 import * as portOfEntry from './port-of-entry.controller.js'
@@ -247,11 +248,12 @@ describe('port-of-entry — the arrival-date window', () => {
     })
 
     expect(result.view).toBeUndefined()
-    expect(result.after.arrivalDateAtPort).toEqual({
-      day: String(dateWindow[bound].getUTCDate()),
-      month: String(dateWindow[bound].getUTCMonth() + 1),
-      year: String(dateWindow[bound].getUTCFullYear())
-    })
+    expect(result.after.arrivalDateAtPort).toEqual(
+      readDate(
+        { arrivalDateAtPort: formatDateText(dateWindow[bound]) },
+        'arrivalDateAtPort'
+      )
+    )
   })
 
   it('Should keep the real-date message for a calendar-impossible date', async () => {

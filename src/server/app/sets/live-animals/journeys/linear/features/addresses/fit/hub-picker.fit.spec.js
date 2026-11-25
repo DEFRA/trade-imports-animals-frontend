@@ -35,6 +35,7 @@ import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { PARTIES } from '../parties.js'
 import { STUB_BOOK } from '../../../../../../../services/address-book/stub/index.js'
 import { recordsHoldingRole as listedFor } from '../../../../../../../services/address-book/stub/test-support.js'
+import { ADDRESSES_A_PAGE } from '../party-picker/view-model/pagination.js'
 
 const addressBookInsetText = (party) => {
   const {
@@ -56,7 +57,6 @@ const PLACE_OF_DESTINATION = PARTIES.find(
   ({ id }) => id === 'placeOfDestination'
 )
 const CONSIGNOR_ADDRESS_COUNT = addressCountFor(CONSIGNOR)
-const ROLES_AND_ADDRESSES = 'Roles and addresses'
 const SLASHED_CPH_NUMBER = '12/345/6789'
 
 const expectConsignorOffersOnlyItsAddLink = async (page) => {
@@ -124,11 +124,23 @@ const resultsHeading = (page) =>
 
 const resultsSummary = (page) => paragraphFollowing(resultsHeading(page))
 
-const expectNothingBetweenSearchAndResultsHeading = async (page) => {
-  await expect(
-    resultsHeading(page).locator('xpath=preceding-sibling::*[1]')
-  ).toHaveClass(/govuk-form-group/)
+const elementBeforeResultsHeading = (page) =>
+  resultsHeading(page).locator('xpath=preceding-sibling::*[1]')
+
+const expectSearchBoxDirectlyAboveResultsHeading = async (page) => {
+  await expect(elementBeforeResultsHeading(page)).toHaveClass(
+    /govuk-form-group/
+  )
 }
+
+const expectChosenAddressNamedAboveResults = async (page, name) => {
+  await expect(elementBeforeResultsHeading(page)).toHaveText(
+    copy.picker.selectedAddress(name)
+  )
+}
+
+const pageLink = (page, number) =>
+  page.getByRole('link', { name: `Page ${number}`, exact: true })
 
 const postAnIdNotInTheBook = async (page) => {
   await page
@@ -198,7 +210,7 @@ test.describe('addresses hub', () => {
     await openOverview(page)
     await expect(
       page.locator('.govuk-task-list__item', {
-        hasText: ROLES_AND_ADDRESSES
+        hasText: hubCopy.rows.addresses.title
       })
     ).toContainText(hubCopy.statuses.complete)
   })
@@ -358,7 +370,7 @@ test.describe('addresses hub — same-as shortcut', () => {
     await expect(
       page.getByRole('radio', { name: partyPickerName(values.placeOfOrigin) })
     ).toHaveCount(0)
-    await expect(page.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
+    await expect(page.getByRole('radio')).toHaveCount(ADDRESSES_A_PAGE)
   })
 
   test('has no serious or critical axe violations with the same-as buttons showing, at desktop and phone width', async ({
@@ -518,23 +530,36 @@ test.describe('party picker per role', () => {
       ).toBeVisible()
 
       const listed = listedFor(party.addressBookRole)
-      await expect(page.getByRole('radio')).toHaveCount(listed.length)
-
       const rolelessRecord = STUB_BOOK.find(
         (record) => record.name === 'Unclassified Traders Ltd'
       )
-      await expect(
-        page.getByRole('radio', { name: partyPickerName(rolelessRecord) })
-      ).toBeVisible()
-
       const otherRole = STUB_BOOK.find(
         (record) =>
           record.roles.length > 0 &&
           !record.roles.includes(party.addressBookRole)
       )
-      await expect(
-        page.getByRole('radio', { name: partyPickerName(otherRole) })
-      ).toHaveCount(0)
+      const idsSeen = []
+
+      for (
+        let number = 1;
+        number <= Math.ceil(listed.length / ADDRESSES_A_PAGE);
+        number++
+      ) {
+        if (number > 1) {
+          await pageLink(page, number).click()
+        }
+        await expect(
+          page.getByRole('radio', { name: partyPickerName(otherRole) })
+        ).toHaveCount(0)
+        idsSeen.push(
+          ...(await page
+            .getByRole('radio')
+            .evaluateAll((radios) => radios.map((radio) => radio.value)))
+        )
+      }
+
+      expect(idsSeen).toEqual(listed.map((record) => record.id))
+      expect(idsSeen).toContain(rolelessRecord.id)
     })
 
     test(`${party.title} picker offers no add-address control in stub mode`, async ({
@@ -566,7 +591,7 @@ test.describe('party picker per role', () => {
       await expect(
         page.getByRole('radio', { name: selectedName })
       ).toBeChecked()
-      await expectNothingBetweenSearchAndResultsHeading(page)
+      await expectChosenAddressNamedAboveResults(page, selectedName)
     })
   }
 })
@@ -588,18 +613,38 @@ test.describe('party picker layout', () => {
 
     expect(headingTop).toBeGreaterThan(searchBox.y + searchBox.height)
     await expect(resultsSummary(page)).toHaveText(
-      copy.picker.resultsCount(CONSIGNOR_ADDRESS_COUNT, CONSIGNOR_ADDRESS_COUNT)
+      copy.picker.resultsCount(ADDRESSES_A_PAGE, CONSIGNOR_ADDRESS_COUNT)
     )
   })
 
-  test('picker offers every consignor address as one group named by the results heading, with no page links', async ({
+  test('picker offers a page of consignor addresses as one group named by the results heading, numbering every page of the role', async ({
     page
   }) => {
     const group = page.getByRole('group', { name: copy.picker.resultsHeading })
 
-    await expect(group.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
-    await expect(page.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
-    await expect(page.getByRole('link', { name: /^Page \d/ })).toHaveCount(0)
+    await expect(group.getByRole('radio')).toHaveCount(ADDRESSES_A_PAGE)
+    await expect(page.getByRole('radio')).toHaveCount(ADDRESSES_A_PAGE)
+    await expect(pageLink(page, 1)).toHaveAttribute('aria-current', 'page')
+    await expect(page.getByRole('link', { name: /^Page \d/ })).toHaveCount(
+      Math.ceil(CONSIGNOR_ADDRESS_COUNT / ADDRESSES_A_PAGE)
+    )
+    await expect(
+      page.getByRole('link', { name: copy.picker.pagination.next })
+    ).toBeVisible()
+  })
+
+  test('picker offers no paging for a role whose addresses fit on one page', async ({
+    page
+  }) => {
+    await saveAndContinue(page).click()
+    await openPartyPicker(page, CONSIGNEE)
+
+    await expect(page.getByRole('radio')).toHaveCount(
+      addressCountFor(CONSIGNEE)
+    )
+    await expect(
+      page.getByRole('navigation', { name: 'Pagination' })
+    ).toHaveCount(0)
   })
 
   test('picker shows the no-matches message in the place of the count after a search that finds nothing', async ({
@@ -691,7 +736,7 @@ test.describe('party picker search', () => {
     )
   })
 
-  test('clearing the search and searching with nothing entered lists every consignor address again, on one page', async ({
+  test('clearing the search and searching with nothing entered opens the whole consignor list again, from its first page', async ({
     page
   }) => {
     await searchAddresses(page, 'Denmark')
@@ -702,9 +747,10 @@ test.describe('party picker search', () => {
     await searchAddresses(page, '')
 
     await expect(resultsSummary(page)).toHaveText(
-      copy.picker.resultsCount(CONSIGNOR_ADDRESS_COUNT, CONSIGNOR_ADDRESS_COUNT)
+      copy.picker.resultsCount(ADDRESSES_A_PAGE, CONSIGNOR_ADDRESS_COUNT)
     )
-    await expect(page.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
+    await expect(page.getByRole('radio')).toHaveCount(ADDRESSES_A_PAGE)
+    await expectSearchBoxDirectlyAboveResultsHeading(page)
   })
 
   test('picker search with no matches shows its empty state', async ({
@@ -785,7 +831,7 @@ test.describe('party picker details', () => {
     page
   }) => {
     await expect(resultsSummary(page)).toHaveText(
-      copy.picker.resultsCount(CONSIGNOR_ADDRESS_COUNT, CONSIGNOR_ADDRESS_COUNT)
+      copy.picker.resultsCount(ADDRESSES_A_PAGE, CONSIGNOR_ADDRESS_COUNT)
     )
     await expect(withinFullWidthColumn(journeyFormOf(page))).toHaveCount(1)
     const addressRow = page.getByRole('row', { name: /Danish Meat Export ApS/ })
@@ -803,28 +849,51 @@ test.describe('party picker details', () => {
     await expect(addressRow.getByRole('cell').last()).toHaveText('Denmark')
   })
 
-  test('picker lists every consignor address on one page, with no page links', async ({
+  test('picker lists a page of consignor addresses, and the page after it holds the rest', async ({
     page
   }) => {
-    await expect(page.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
-    await expect(page.getByRole('link', { name: /^Page \d/ })).toHaveCount(0)
+    const consignorNames = listedFor(CONSIGNOR.addressBookRole).map(
+      (record) => record.name
+    )
+
+    await expect(page.getByRole('radio')).toHaveCount(ADDRESSES_A_PAGE)
+    await expect(resultsSummary(page)).toHaveText(
+      copy.picker.resultsCount(ADDRESSES_A_PAGE, CONSIGNOR_ADDRESS_COUNT)
+    )
+
+    await pageLink(page, 2).click()
+
+    await expect(page.getByRole('radio')).toHaveCount(
+      CONSIGNOR_ADDRESS_COUNT - ADDRESSES_A_PAGE
+    )
+    await expect(resultsSummary(page)).toHaveText(
+      copy.picker.resultsCount(
+        CONSIGNOR_ADDRESS_COUNT - ADDRESSES_A_PAGE,
+        CONSIGNOR_ADDRESS_COUNT
+      )
+    )
+    await expect(
+      page.getByRole('radio', { name: consignorNames.at(-1) })
+    ).toBeVisible()
   })
 
-  test('reopening the picker checks the previously chosen address, with nothing between the search box and the results heading', async ({
+  test('reopening the picker checks the previously chosen address and names it above the results, and paging keeps it chosen', async ({
     page
   }) => {
     const consignorSection = addressesSection(page, CONSIGNOR.title)
-    await page
-      .getByRole('radio', { name: partyPickerName(values.consignor) })
-      .check()
+    const chosenName = partyPickerName(values.consignor)
+    await page.getByRole('radio', { name: chosenName }).check()
     await saveAndContinue(page).click()
 
     await consignorSection.getByRole('link', { name: copy.hub.change }).click()
 
-    await expect(
-      page.getByRole('radio', { name: partyPickerName(values.consignor) })
-    ).toBeChecked()
-    await expectNothingBetweenSearchAndResultsHeading(page)
+    await expect(page.getByRole('radio', { name: chosenName })).toBeChecked()
+    await expectChosenAddressNamedAboveResults(page, chosenName)
+
+    await pageLink(page, 2).click()
+
+    await expectChosenAddressNamedAboveResults(page, chosenName)
+    await expect(page.getByRole('radio', { name: chosenName })).toHaveCount(0)
   })
 
   test('picker page has no serious or critical axe violations', async ({

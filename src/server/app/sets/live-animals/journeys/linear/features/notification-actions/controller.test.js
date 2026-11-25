@@ -69,7 +69,7 @@ describe('copy notification action', () => {
       })
     })
 
-    it('Should copy a source the session has not opened into a new draft at its hub', async () => {
+    it('Should copy a submitted notification into a new draft at its hub, register the copy and leave the source submitted', async () => {
       const source = await records.create()
       await records.finalise(
         source.journeyId,

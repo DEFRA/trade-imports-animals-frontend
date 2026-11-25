@@ -4,8 +4,10 @@ export const copy = {
     heading: 'Your commodities',
     animalsLabel: 'Animals',
     animalsCaption: 'Total number of animals in this consignment',
+    animalsRegionLabel: 'Animals summary',
     packagesLabel: 'Packages/boxes',
-    packagesCaption: 'Total number of packages in this consignment'
+    packagesCaption: 'Total number of packages in this consignment',
+    packagesRegionLabel: 'Packages summary'
   },
   reviewAndSubmit: 'Review and submit',
   returnToDashboard: 'Return to dashboard',
@@ -13,13 +15,13 @@ export const copy = {
     complete: 'Complete',
     toDo: 'To do'
   },
-  taskListHeading: 'Notification tasklist',
+  taskListHeading: 'Notification task list',
   groups: {
     'about-the-consignment': '1. About the consignment',
     'description-of-the-goods': '2. Description of the goods',
     'transport-and-arrival': '3. Transport and arrival',
     documents: '4. Documents',
-    'consignment-parties': '5. Consignment parties',
+    'consignment-parties': '5. Addresses',
     'contact-address': '6. Contact address'
   },
   rows: {
@@ -51,7 +53,7 @@ export const copy = {
       title: 'Transport details'
     },
     addresses: {
-      title: 'Roles and addresses',
+      title: 'Consignment addresses',
       hint: 'Consignor or Exporter, Consignee, Importer and Place of Destination'
     },
     contact: {

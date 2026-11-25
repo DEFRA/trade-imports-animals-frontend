@@ -25,6 +25,7 @@ import {
 } from '../../../../../../shared/kit.js'
 import { journeySectionCaption } from '../../../../../../flow/journey-flow.js'
 import { copyFor } from '../../../../../../shared/copy.js'
+import { notificationActionSlugs } from '../../flow/notification-action-slugs.js'
 import { dashboardPage } from './page.js'
 import { originPage } from '../origin/page.js'
 import { notificationViewPage } from '../check-answers/page.js'
@@ -38,6 +39,7 @@ import {
   normalizePageNumber,
   parseNotificationSort
 } from './notification-helper.js'
+import { FIRST_PAGE, pageAskedFor } from '../../../../../../shared/paging.js'
 import { toRow } from './view-model/row/index.js'
 import { sortOptions } from './view-model/sort-options.js'
 
@@ -69,8 +71,7 @@ export const renderDashboard = async (
   h,
   { recoverableError = false } = {}
 ) => {
-  const queryPage = Number.parseInt(request.query?.page, 10)
-  const requestedPage = normalizePageNumber(queryPage)
+  const requestedPage = pageAskedFor(request.query?.page) ?? FIRST_PAGE
   const sort = parseNotificationSort(request.query?.sort)
   const referenceNumber = parseReferenceNumber(request.query?.referenceNumber)
   const listed = await listKnownJourneys(request, {
@@ -137,7 +138,7 @@ const amendPost = async (request, h) => {
       journeyId: journey.journeyId,
       organisationId: organisationIdOf(request)
     },
-    'Amendment started, sent to the review page'
+    'Amendment started'
   )
   return h.redirect(
     withTrail(pagePath(journey.journeyId, notificationViewPage.slug), [
@@ -182,7 +183,7 @@ export const routes = [
   },
   {
     method: 'POST',
-    path: pageRoutePath('amend'),
+    path: pageRoutePath(notificationActionSlugs.amend),
     options: pageRouteOptions(notificationActionsPage),
     handler: amendPost
   },

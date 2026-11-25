@@ -39,16 +39,15 @@
     name: secondary.name,
     value: secondary.value
   } if secondary %}
-  {% set hubExitButton = withAttributes({
-    text: copy.saveAndReturnToHub,
-    classes: "govuk-button--secondary",
-    name: "exit",
-    value: "hub"
-  }, fileAttributes) %}
   <div class="govuk-button-group">
     {{ govukButton(primaryButton) }}
     {% if showReturnControls %}
-      {{ govukButton(hubExitButton) }}
+      {{ govukButton(withAttributes({
+        text: copy.saveAndReturnToHub,
+        classes: "govuk-button--secondary",
+        name: "exit",
+        value: "hub"
+      }, fileAttributes)) }}
     {% endif %}
     {% if secondary %}
       {{ govukButton(secondaryButton) }}

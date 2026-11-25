@@ -61,7 +61,7 @@ export const copy = {
     }
   },
   picker: {
-    caption: 'Consignment parties',
+    caption: 'Addresses',
     search: {
       label: 'Search',
       hint: 'Name, address or country',
@@ -69,8 +69,13 @@ export const copy = {
     },
     errorPrefix: 'Error:',
     noMatches: 'No addresses match your search.',
+    selectedAddress: (name) => `Selected address: ${name}`,
     resultsHeading: 'Select an address',
     resultsCount: (shown, total) => `Showing ${shown} out of ${total} results`,
+    pagination: {
+      previous: 'Previous',
+      next: 'Next'
+    },
     table: {
       selectHidden: 'Select',
       name: 'Name',

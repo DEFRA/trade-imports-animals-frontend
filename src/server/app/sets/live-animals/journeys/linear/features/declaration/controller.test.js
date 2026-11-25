@@ -8,8 +8,6 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { records as realRecords } from '../../../../../../services/persistence/records/real/index.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
 import {
-  addressBookRefusingAddresses,
-  addressBookRequestUrls,
   expectOneLogged,
   expectNoRefusalLogged,
   fetchMock,
@@ -23,6 +21,10 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import {
+  addressBookRefusingAddresses,
+  addressBookRequestUrls
+} from '../../../../../../engine/address-book-test-support.js'
 import { dispatchPages } from '../index.js'
 
 import * as declaration from './controller.js'
@@ -123,7 +125,7 @@ describe('#declaration', () => {
       expect(response).toEqual({ redirect: reviewPath(journeyId) })
     })
 
-    it('Should redirect a GET on an already-submitted journey to the confirmation page', async () => {
+    it('Should redirect a GET on a journey submitted to the confirmation page', async () => {
       const { journeyId } = await store.create()
       await store.submit(journeyId)
 
@@ -256,7 +258,7 @@ describe('#declaration submit', () => {
       })
     })
 
-    it('Should submit the notification and redirect to the confirmation page when the declaration is confirmed', async () => {
+    it('Should submit the notification as Submitted and redirect to the confirmation page when the declaration is confirmed with no ITAHC uploaded', async () => {
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
 
       expect(result.response).toEqual({
@@ -349,7 +351,7 @@ describe('#declaration submit', () => {
       expect((await store.get(result.journeyId)).status).toBe('draft')
     })
 
-    it('Should redirect an already-submitted POST retry to confirmation', async () => {
+    it('Should redirect a POST retry on a submitted journey to confirmation', async () => {
       const { journeyId } = await store.create()
       await store.submit(journeyId)
 

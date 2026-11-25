@@ -226,7 +226,7 @@ Completed whatever the parts roll up to. See
 
 The hub lists a task row under the section that holds its first page, so there is no group list to edit.
 Add the row title to both hub copy bundles. Hub task rows carry no hint:
-Design release 1 keeps the hub to one-line rows and "Roles and addresses" is
+The hub keeps to one-line rows and "Consignment addresses" is
 the one hinted row, guarded by
 [`journeys/linear/features/hub/copy/copy.test.js`](../journeys/linear/features/hub/copy/copy.test.js).
 Add a new numbered hub
@@ -289,14 +289,23 @@ A section id carries a suffix (`documents-section`,
 `contact-address-section`) where a card owns the bare id the error summary
 links to.
 
-Rows carry no Change link — `row(key, value)` is a key and a value. Each new
-card needs one `cardAction(changeContext, <page>.slug, copy.hidden.cards.<cardId>)`, where `changeContext` is the review's `{ journeyId, changeLinkTrail }`,
+The card heading carries the Change link for the answers inside the card.
+The exceptions carry their own link: the first row of each species block, each
+species block's Identification details, and the transit countries row in the
+Arrival details card. The Consignment addresses
+card's Permanent address group carries none: the card's header Change link
+changes it. Each
+new card needs one `changeAction(changeContext, <page>.slug, copy.hidden.cards.<cardId>)`, where `changeContext` is the review's `{ journeyId, changeLinkTrail }`,
 wrapped in `editableActions({ readOnly, actions })`, plus a `hidden.cards.<cardId>` leaf
 in BOTH check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that
-leaf the fit assertion "every Change link sits in a card heading and no summary
-row carries one"
+leaf the fit assertion "one Change link per card, named for its card, in card
+order, and none on a row of a new notification"
 ([`check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js))
-fails. Use `scope` to omit out-of-scope rows. Extend
+fails. A section with one card per collection entry has no `hidden.cards.<cardId>`
+leaf: each card's hidden suffix is built from its own title, as `copy.hidden.document(n)`
+does in
+[`check-answers/view-model/cards/documents.js`](../journeys/linear/features/check-answers/view-model/cards/documents.js).
+Use `scope` to omit out-of-scope rows. Extend
 [`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js)
 for every value, and for the card's one Change target.
 

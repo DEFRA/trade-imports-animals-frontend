@@ -55,12 +55,9 @@ const IMPORT_REASON_ROW_TITLE = 'Main import reason'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const IDENTIFICATION_ROW_TITLE = 'Identification details'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
-const ADDRESSES_ROW_TITLE = 'Roles and addresses'
+const ADDRESSES_ROW_TITLE = 'Consignment addresses'
 const ADDRESSES_ROW_HINT =
   'Consignor or Exporter, Consignee, Importer and Place of Destination'
-const ADDRESSES_ROW_HINT_CY =
-  'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
-const CANNOT_START_CLASS = 'govuk-task-list__status--cannot-start-yet'
 
 const A_JOURNEY_PAGE_URL_UNDER_SET_BASE = new RegExp(
   `^${SET_BASE}/notifications/[^/]+/.+`
@@ -72,19 +69,6 @@ const COMPLETE_STATUS = {
   tag: { text: 'Complete', classes: 'govuk-tag--green' }
 }
 const DESIGN_STATUSES = [TO_DO_STATUS, COMPLETE_STATUS]
-
-const UNLOCKED_ROW_TITLES_BY_GROUP = [
-  [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
-  [
-    CONSIGNMENT_DETAILS_ROW_TITLE,
-    IDENTIFICATION_ROW_TITLE,
-    'Additional details'
-  ],
-  [ARRIVAL_ROW_TITLE, 'Transport details'],
-  ['Upload documents'],
-  [ADDRESSES_ROW_TITLE],
-  ['Contact address for this consignment']
-]
 
 const owingExitQuestionsSeed = {
   ...unlockedSeed,
@@ -120,11 +104,11 @@ const EXIT_DATE = { day: '20', month: '12', year: '2026' }
 describe('#copy', () => {
   itHoldsCopyAtEveryLeaf(copy, copyCy)
 
-  test('Should head the whole task list "Notification tasklist"', () => {
-    expect(copy.taskListHeading).toBe('Notification tasklist')
+  test('Should head the whole task list "Notification task list"', () => {
+    expect(copy.taskListHeading).toBe('Notification task list')
   })
 
-  test('Should give a hint to the roles and addresses row alone', () => {
+  test('Should give a hint to the consignment addresses row alone', () => {
     const hinted = Object.entries(copy.rows)
       .filter(([, row]) => row.hint !== undefined)
       .map(([id]) => id)
@@ -137,7 +121,18 @@ describe('#copy', () => {
       .map(([id]) => id)
 
     expect(hintedCy).toEqual(['addresses'])
-    expect(copyCy.rows.addresses.hint).toBe(ADDRESSES_ROW_HINT_CY)
+    expect(copyCy.rows.addresses.hint).toBe(
+      'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
+    )
+  })
+
+  test('Should name the two commodity total regions in both locales', () => {
+    expect(copy.commodityTotals.animalsRegionLabel).toBe('Animals summary')
+    expect(copy.commodityTotals.packagesRegionLabel).toBe('Packages summary')
+    expect(copyCy.commodityTotals.animalsRegionLabel).toBe(
+      'Crynodeb anifeiliaid'
+    )
+    expect(copyCy.commodityTotals.packagesRegionLabel).toBe('Crynodeb pecynnau')
   })
 
   test('Should pin the Welsh row titles', () => {
@@ -155,7 +150,7 @@ describe('#copy', () => {
       arrivalDetails: 'Manylion cyrraedd',
       transitCountries: 'Gwledydd tramwy',
       transporter: 'Manylion cludo',
-      addresses: 'Rolau a chyfeiriadau',
+      addresses: 'Cyfeiriadau’r llwyth',
       contact: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Uwchlwytho dogfennau'
     })
@@ -194,7 +189,7 @@ describe('#hubHandler', () => {
       '2. Description of the goods',
       '3. Transport and arrival',
       '4. Documents',
-      '5. Consignment parties',
+      '5. Addresses',
       '6. Contact address'
     ])
   })
@@ -203,7 +198,18 @@ describe('#hubHandler', () => {
     const { groups } = await renderHub(unlockedSeed)
     expect(
       groups.map((group) => group.items.map((item) => item.title.text))
-    ).toEqual(UNLOCKED_ROW_TITLES_BY_GROUP)
+    ).toEqual([
+      [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
+      [
+        CONSIGNMENT_DETAILS_ROW_TITLE,
+        IDENTIFICATION_ROW_TITLE,
+        'Additional details'
+      ],
+      [ARRIVAL_ROW_TITLE, 'Transport details'],
+      ['Upload documents'],
+      [ADDRESSES_ROW_TITLE],
+      ['Contact address for this consignment']
+    ])
   })
 
   it('Should hold "About the consignment" at three rows once a reason opens its exit questions', async () => {
@@ -262,8 +268,8 @@ describe('#hubHandler', () => {
       expect(row.href, `${row.title.text} has no way in`).toMatch(
         A_JOURNEY_PAGE_URL_UNDER_SET_BASE
       )
-      expect(row.status.classes, `${row.title.text} is shut`).not.toBe(
-        CANNOT_START_CLASS
+      expect(DESIGN_STATUSES, `${row.title.text} is shut`).toContainEqual(
+        row.status
       )
     }
   })
@@ -482,7 +488,7 @@ describe('#hubHandler — the Commodity details row', () => {
 })
 
 describe('#hubHandler — the row hints', () => {
-  it('Should build a hint slot on the roles and addresses row alone', async () => {
+  it('Should build a hint slot on the consignment addresses row alone', async () => {
     const context = await renderHub(roadSeedShowingEveryRow)
 
     expect(

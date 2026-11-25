@@ -43,7 +43,9 @@ const startAmend = async () => {
   const journey = await store.create()
   await records.replaceFulfilment(
     journey.journeyId,
-    assembleFulfilments({ internalReferenceNumber: 'SubmittedRef' })
+    assembleFulfilments({
+      internalReferenceNumber: 'SubmittedRef'
+    })
   )
   await store.submit(journey.journeyId)
   await records.amend(journey.journeyId)

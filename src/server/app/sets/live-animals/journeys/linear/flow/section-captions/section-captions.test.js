@@ -6,7 +6,7 @@ import { copy as en } from './copy/copy.en.js'
 
 const ABOUT_THE_CONSIGNMENT = 'About the consignment'
 const DESCRIPTION_OF_THE_GOODS = 'Description of the goods'
-const CONSIGNMENT_PARTIES = 'Consignment parties'
+const ADDRESSES = 'Addresses'
 const TRANSPORT_AND_ARRIVAL = 'Transport and arrival'
 const NEW_TRANSPORTER = 'Add a new transporter'
 
@@ -18,9 +18,9 @@ const CAPTIONED = [
   ['animalIdentification', ABOUT_THE_CONSIGNMENT],
   ['import-reason', ABOUT_THE_CONSIGNMENT],
   ['additional-details', 'Commodity details'],
-  ['addresses', CONSIGNMENT_PARTIES],
-  ['cphNumber', CONSIGNMENT_PARTIES],
-  ['permanentAddress', CONSIGNMENT_PARTIES],
+  ['addresses', ADDRESSES],
+  ['cphNumber', ADDRESSES],
+  ['permanentAddress', ADDRESSES],
   ['transit-countries', 'Movement'],
   ['port-of-entry', TRANSPORT_AND_ARRIVAL],
   ['transporters', TRANSPORT_AND_ARRIVAL],

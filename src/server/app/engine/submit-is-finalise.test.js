@@ -26,7 +26,9 @@ describe('submit is finalise', () => {
 
   it('Should flip to submitted, keep answers byte-equal, and freeze further writes', async () => {
     configureReadyForCheckYourAnswers(SET_ID, () => true)
-    await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+    await commit(buildRequest(), stubH(), {
+      countryOfOrigin: 'FR'
+    })
     const { fulfilment: committed, concurrencyToken } = await records.load({
       journeyId
     })

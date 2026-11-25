@@ -1,16 +1,15 @@
 import { expect, test } from '@playwright/test'
 import {
   BASE,
-  completeAnswerSections,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   journeyUrl,
-  openReviewFromHub,
   signIn,
   startNotification,
-  urlUnderBase
+  submitCompleteNotification,
+  urlUnderBase,
+  expectDraftReview
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
 const expectPanelCopy = async (page) => {
@@ -87,18 +86,47 @@ test.describe('confirmation feature', () => {
     await signIn(page)
   })
 
-  test('redirects an unsubmitted notification back to its hub', async ({
+  test('sends an unsubmitted notification through its declaration to its review page', async ({
     page
   }) => {
     await startNotification(page)
-    const hubUrl = journeyUrl(page)
+    const reviewUrl = journeyUrl(page, 'notification-view')
+
+    const declarationPath = journeyUrl(page, 'declaration')
+    const declarationRequest = page.waitForRequest(
+      (request) => new URL(request.url()).pathname === declarationPath
+    )
 
     await page.goto(journeyUrl(page, 'confirmation'))
+    await declarationRequest
 
-    await expect(page).toHaveURL(hubUrl)
+    await expect(page).toHaveURL(reviewUrl)
+    await expectDraftReview(page)
+  })
+})
+
+test.describe('confirmation feature after an ITAHC was uploaded', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test.describe.configure({ timeout: 90000 })
+
+  test('shows only the transporting, view or amend and help sections once an ITAHC is uploaded', async ({
+    page
+  }) => {
+    await submitCompleteNotification(page, { withItahc: true })
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/confirmation')
+    )
+
     await expect(
-      page.getByRole('heading', { level: 2, name: hubCopy.taskListHeading })
-    ).toBeVisible()
+      page.getByRole('main').getByRole('heading', { level: 2 })
+    ).toHaveText([
+      copy.transporting.heading,
+      copy.viewOrAmend.heading,
+      copy.help.heading
+    ])
   })
 })
 
@@ -110,14 +138,7 @@ test.describe('submitted confirmation feature', () => {
   test.describe.configure({ timeout: 90000 })
 
   test.beforeEach(async ({ page }) => {
-    await startNotification(page)
-    await completeAnswerSections(page)
-    await openReviewFromHub(page)
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await page
-      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
-      .check()
-    await page.getByRole('button', { name: 'Continue' }).click()
+    await submitCompleteNotification(page)
     await expect(page).toHaveURL(
       urlUnderBase('/notifications/[^/]+/confirmation')
     )

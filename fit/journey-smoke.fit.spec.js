@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test'
 import { copy as additionalDetailsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.en.js'
-import { copy as checkAnswersCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
 import { copy as hubCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.en.js'
 import { copy as importReasonCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/import-reason/copy/copy.en.js'
@@ -17,7 +16,7 @@ import {
   answerCommodityCounts,
   answerContactAddress,
   answerImportReason,
-  answerRolesAndAddresses,
+  answerConsignmentAddresses,
   answerTransitCountries,
   answerTransporter,
   saveAndContinueToImportReason,
@@ -25,6 +24,7 @@ import {
   completeAnswerSections,
   documentRowFor,
   errorSummary,
+  expectDraftReview,
   expectLanding,
   expectSpeciesSelected,
   journeyUrl,
@@ -32,6 +32,7 @@ import {
   openNotificationView,
   openOverview,
   openReviewFromHub,
+  save,
   saveAndExpectLanding,
   selectSpecies,
   signIn,
@@ -146,7 +147,7 @@ test.describe('live-animals journey glue', () => {
     )
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await answerRolesAndAddresses(page)
+    await answerConsignmentAddresses(page)
     await expect(page).toHaveURL(
       urlUnderBase('/notifications/[^/]+/consignment/contact/select')
     )
@@ -155,7 +156,7 @@ test.describe('live-animals journey glue', () => {
     await expect(page).toHaveURL(
       urlUnderBase('/notifications/[^/]+/notification-view')
     )
-    await expect(heading(checkAnswersCopy.title)).toBeVisible()
+    await expectDraftReview(page)
   })
 
   test('following Back and choosing Save and continue carries on to the next step', async ({
@@ -226,8 +227,6 @@ test.describe('live-animals journey glue', () => {
   test('Save and continue ends on the review page, naming what is outstanding, when the notification is incomplete', async ({
     page
   }) => {
-    const heading = (name) => page.getByRole('heading', { name })
-
     await saveAndContinueToImportReason(page)
 
     await page.goto(journeyUrl(page, 'consignment/contact/select'))
@@ -236,11 +235,11 @@ test.describe('live-animals journey glue', () => {
     await expect(page).toHaveURL(
       urlUnderBase('/notifications/[^/]+/notification-view')
     )
-    await expect(heading(checkAnswersCopy.title)).toBeVisible()
+    await expectDraftReview(page)
     const summary = errorSummary(page)
     await expect(summary).toContainText('There is a problem')
-    await expect(summary).toContainText('Complete reason for import')
-    await expect(summary).toContainText('Complete roles and addresses')
+    await expect(summary).toContainText('Complete main import reason')
+    await expect(summary).toContainText('Complete consignment addresses')
   })
 
   test('a notification created in another session, holding no answers, is sent back to the entry page', async ({
@@ -269,14 +268,12 @@ test.describe('live-animals journey glue', () => {
     page
   }) => {
     test.slow()
-    const review = { slug: 'notification-view', title: checkAnswersCopy.title }
     const pagesVisited = [
       LANDINGS.transitCountries,
       LANDINGS.transporters,
       LANDINGS.documents,
       LANDINGS.addresses,
-      LANDINGS.contactAddress,
-      review
+      LANDINGS.contactAddress
     ]
     await startNotification(page)
     await completeAnswerSections(page)
@@ -287,8 +284,14 @@ test.describe('live-animals journey glue', () => {
       await saveAndExpectLanding(page, landing)
     }
 
+    await save(page)
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/notification-view')
+    )
+    await expectDraftReview(page)
+
     const pagesBackThrough = [
-      ...pagesVisited.slice(0, -1).reverse(),
+      ...[...pagesVisited].reverse(),
       LANDINGS.arrivalDetails
     ]
     for (const landing of pagesBackThrough) {
@@ -345,7 +348,7 @@ test.describe('live-animals journey glue', () => {
       accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
       filename: 'commercial-invoice.pdf'
     }
-    await page.getByRole('link', { name: 'Change uploaded documents' }).click()
+    await page.getByRole('link', { name: 'Change document 1' }).click()
     await expect(page).toHaveURL(documentsOnTheReviewTrail)
     await addDocument(page, secondDocument)
     await expect(page).toHaveURL(documentsOnTheReviewTrail)

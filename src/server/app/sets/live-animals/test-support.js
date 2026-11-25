@@ -23,12 +23,16 @@ export const seedFromFranceWithCommodityLineOfAnimals = (count) =>
     ]
   })
 
-export const seedFromFranceWithOneEarTaggedCattle = () =>
-  withOriginSaved({
-    commodityLines: [
-      lineOf(BOS_TAURUS_ROW, {
-        numberOfAnimalsQuantity: '1',
-        animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
-      })
-    ]
+export const cattleLine = ({ animals, earTags }) =>
+  lineOf(BOS_TAURUS_ROW, {
+    numberOfAnimalsQuantity: String(animals),
+    animalIdentifiers: Array.from({ length: earTags }, (_, index) => ({
+      animalIdentifierEarTag: `UK${index + 1}`
+    }))
   })
+
+export const seedFromFranceWithCattle = (counts) =>
+  withOriginSaved({ commodityLines: [cattleLine(counts)] })
+
+export const seedFromFranceWithOneEarTaggedCattle = () =>
+  seedFromFranceWithCattle({ animals: 1, earTags: 1 })

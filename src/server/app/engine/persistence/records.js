@@ -25,8 +25,6 @@ const UNCONFIGURED = Object.freeze({
 
 const store = setKeyed('records', { configuredBy: 'configureRecords' })
 
-// Reading before configuration is the un-booted case, which must report itself
-// through `unconfigured` rather than through setKeyed's "no such set" error.
 const impl = () => (store.has(currentSetId()) ? store.current() : UNCONFIGURED)
 
 export const configureRecords = (setId, newImpl) => {

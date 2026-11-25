@@ -9,8 +9,12 @@ import { pickerTableRows } from './view-model/table-rows.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 const pickerCopy = addressesCopy.picker
+const FORM_GROUP_SELECTOR = '.govuk-form-group'
 
-const renderResults = (rows, { error, query, withViewLinks = true } = {}) =>
+const renderResults = (
+  rows,
+  { error, query, withViewLinks = true, pagination } = {}
+) =>
   environment.renderString(
     `{% from "live-animals/journeys/linear/features/addresses/party-picker/_address-picker.njk" import addressPickerResults %}
      {{ addressPickerResults(picker, copy) }}`,
@@ -21,13 +25,23 @@ const renderResults = (rows, { error, query, withViewLinks = true } = {}) =>
         tableRows: pickerTableRows(rows, pickerCopy, { withViewLinks }),
         error,
         query,
+        pagination,
         resultsCount: pickerCopy.resultsCount(rows.length, rows.length)
       },
       copy: pickerCopy
     }
   )
 
-const renderPicker = (picker = { rows: [], query: '' }) =>
+const pickerShowing = (overrides = {}) => ({
+  rows: [row],
+  query: '',
+  page: 1,
+  tableRows: pickerTableRows([row], pickerCopy, { withViewLinks: true }),
+  resultsCount: pickerCopy.resultsCount(1, 1),
+  ...overrides
+})
+
+const renderPicker = (picker = { rows: [], query: '', page: 1 }) =>
   environment.renderString(
     `{% from "live-animals/journeys/linear/features/addresses/party-picker/_address-picker.njk" import addressPicker %}
      {{ addressPicker(picker, crumb, copy, saveActionsCopy, hubHref) }}`,
@@ -43,6 +57,36 @@ const renderPicker = (picker = { rows: [], query: '' }) =>
 const row = pickerRow()
 
 describe('addressPickerResults macro', () => {
+  it('Should offer the paging links under the results, naming each page it holds', () => {
+    const secondPageHref = '/select?page=2'
+    const document = documentOf(
+      renderResults([row], {
+        pagination: {
+          next: { href: secondPageHref, text: pickerCopy.pagination.next },
+          items: [
+            { number: 1, href: '/select', current: true },
+            { number: 2, href: secondPageHref, current: false }
+          ]
+        }
+      })
+    )
+    const paging =
+      document.querySelector(FORM_GROUP_SELECTOR).nextElementSibling
+
+    expect(paging.classList.contains('govuk-pagination')).toBe(true)
+    expect(
+      [...paging.querySelectorAll('.govuk-pagination__link')].map((link) =>
+        link.textContent.trim()
+      )
+    ).toEqual(['1', '2', pickerCopy.pagination.next])
+  })
+
+  it('Should offer no paging links when one page holds every address', () => {
+    const document = documentOf(renderResults([row]))
+
+    expect(document.querySelector('.govuk-pagination')).toBeNull()
+  })
+
   it('Should render the accessible name inside a visually-hidden span so the radio circle stays visible', () => {
     const html = renderResults([row])
 
@@ -200,19 +244,35 @@ describe('addressPicker macro', () => {
     expect(form.previousElementSibling).toBeNull()
   })
 
-  it('Should render the results heading directly after the search field, with nothing between them', () => {
-    const picker = {
-      rows: [row],
-      query: '',
-      tableRows: pickerTableRows([row], pickerCopy, { withViewLinks: true }),
-      resultsCount: pickerCopy.resultsCount(1, 1),
-      selected: row
-    }
-    const form = documentOf(renderPicker(picker)).querySelector('form')
-    const searchFormGroup = form.querySelector('.govuk-form-group')
+  it('Should name the chosen address between the search field and the results heading', () => {
+    const document = documentOf(renderPicker(pickerShowing({ selected: row })))
+    const searchFormGroup = document
+      .querySelector('form')
+      .querySelector(FORM_GROUP_SELECTOR)
+    const afterSearch = searchFormGroup.nextElementSibling
+
+    expect(afterSearch.textContent.trim()).toBe(
+      pickerCopy.selectedAddress(row.name)
+    )
+    expect(afterSearch.nextElementSibling.textContent.trim()).toBe(
+      pickerCopy.resultsHeading
+    )
+  })
+
+  it('Should render the results heading directly after the search field while no address is chosen', () => {
+    const form = documentOf(renderPicker(pickerShowing())).querySelector('form')
+    const searchFormGroup = form.querySelector(FORM_GROUP_SELECTOR)
 
     expect(searchFormGroup.nextElementSibling.textContent.trim()).toBe(
       pickerCopy.resultsHeading
     )
+  })
+
+  it('Should carry the page being shown in a hidden field of the form', () => {
+    const form = documentOf(
+      renderPicker(pickerShowing({ page: 2 }))
+    ).querySelector('form')
+
+    expect(form.querySelector('input[name="page"]').value).toBe('2')
   })
 })
