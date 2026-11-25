@@ -40,7 +40,7 @@ describe('#startServer', () => {
       await server?.stop({ timeout: 0 })
     })
 
-    test('Should start up server as expected', async () => {
+    test('starts a server that answers GET /health with success', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/health'
