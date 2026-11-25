@@ -147,7 +147,6 @@ test.describe('live-animals journey glue', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await answerConsignmentAddresses(page)
-    await expectDraftReview(page)
   })
 
   test('following Back and choosing Save and continue carries on to the next step', async ({
