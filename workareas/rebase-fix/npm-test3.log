@@ -1,0 +1,121 @@
+Protected by Socket Firewall
+(node:84751) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+(Use `sfw --trace-warnings ...` to show where the warning was created)
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> trade-imports-animals-frontend@0.0.0 pretest
+> npm run build:frontend
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> trade-imports-animals-frontend@0.0.0 build:frontend
+> NODE_ENV=production webpack
+
+17 assets
+61 modules
+webpack 5.111.1 compiled successfully in 4742 ms
+
+> trade-imports-animals-frontend@0.0.0 test
+> AWS_EMF_ENVIRONMENT=Local TZ=UTC vitest run --coverage --exclude ./tests/**
+
+
+ RUN  v5.1.0 /Users/tarun/git/defra/trade-imports-workspace/repos/trade-imports-animals-frontend
+      Coverage enabled with v8
+
+ ❯ src/server/common/helpers/start-server.test.js (6 tests | 1 failed) 1363ms
+   ❯ #startServer (6)
+     ❯ When server starts (3)
+       × installs a keep-alive agent for Wreck calls made without an agent 36ms
+Not implemented: HTMLFormElement's requestSubmit() method
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js (21 tests | 4 failed) 379ms
+   ❯ #unlistedSpeciesErrors (4)
+     × Should name every species of a draft that reference data no longer lists under its code, with its code, when Continue was refused 25ms
+     × Should return no unlisted-species error until Continue is refused 1ms
+     × Should return no unlisted-species error for an amendment holding an unlisted species 1ms
+     × Should return no unlisted-species error for a line with no species 1ms
+Lighthouse audited no pages — no URLs to audit
+Lighthouse audited no pages — no URLs to audit
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/common/helpers/start-server.test.js > #startServer > When server starts > installs a keep-alive agent for Wreck calls made without an agent
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/server/common/helpers/start-server.test.js:58:43
+     56|
+     57|     test('installs a keep-alive agent for Wreck calls made without an …
+     58|       expect(Wreck.agents.http.keepAlive).toBe(true)
+       |                                           ^
+     59|     })
+     60|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js > #unlistedSpeciesErrors > Should name every species of a draft that reference data no longer lists under its code, with its code, when Continue was refused
+TypeError: unlistedSpeciesErrors is not a function
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js:230:13
+    228|   it('Should name every species of a draft that reference data no long…
+    229|     expect(
+    230|       await unlistedSpeciesErrors(
+       |             ^
+    231|         { status: unlistedDraft.status },
+    232|         { commodityLines: unlistedDraft.commodityLines },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js > #unlistedSpeciesErrors > Should return no unlisted-species error until Continue is refused
+TypeError: unlistedSpeciesErrors is not a function
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js:244:13
+    242|   it('Should return no unlisted-species error until Continue is refuse…
+    243|     expect(
+    244|       await unlistedSpeciesErrors(
+       |             ^
+    245|         { status: unlistedDraft.status },
+    246|         { commodityLines: unlistedDraft.commodityLines }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js > #unlistedSpeciesErrors > Should return no unlisted-species error for an amendment holding an unlisted species
+TypeError: unlistedSpeciesErrors is not a function
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js:253:13
+    251|   it('Should return no unlisted-species error for an amendment holding…
+    252|     expect(
+    253|       await unlistedSpeciesErrors(
+       |             ^
+    254|         { status: AMEND },
+    255|         { commodityLines: [UNLISTED_SPECIES_LINE] },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js > #unlistedSpeciesErrors > Should return no unlisted-species error for a line with no species
+TypeError: unlistedSpeciesErrors is not a function
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js:263:13
+    261|   it('Should return no unlisted-species error for a line with no speci…
+    262|     expect(
+    263|       await unlistedSpeciesErrors(
+       |             ^
+    264|         { status: DRAFT },
+    265|         { commodityLines: [{ commodityCode: '0102' }] },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  2 failed | 270 passed | 2 skipped (274)
+      Tests  5 failed | 4131 passed | 9 skipped (4145)
+   Start at  09:39:04
+   Duration  126.46s (setup 82%, import 10%, tests 4%, transform 3%, worker 1%)
+
+    Isolate  274 workers spawned · ~426ms startup each (spawn + environment, per file)
+             at least ~7.36s faster with isolate: false — reuses workers across files instead of one per file
+
+
+=== Socket Firewall ===
+
+Warning: Socket Firewall did not detect any package fetch attempts
+

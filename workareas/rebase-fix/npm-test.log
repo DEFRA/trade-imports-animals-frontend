@@ -1,0 +1,251 @@
+Protected by Socket Firewall
+(node:63268) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+(Use `sfw --trace-warnings ...` to show where the warning was created)
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> trade-imports-animals-frontend@0.0.0 pretest
+> npm run build:frontend
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> trade-imports-animals-frontend@0.0.0 build:frontend
+> NODE_ENV=production webpack
+
+17 assets
+61 modules
+webpack 5.111.1 compiled successfully in 12242 ms
+
+> trade-imports-animals-frontend@0.0.0 test
+> AWS_EMF_ENVIRONMENT=Local TZ=UTC vitest run --coverage --exclude ./tests/**
+
+
+ RUN  v5.1.0 /Users/tarun/git/defra/trade-imports-workspace/repos/trade-imports-animals-frontend
+      Coverage enabled with v8
+
+ ❯ src/server/app/co-residency.test.js (0 test)
+ ❯ src/server/router.test.js (0 test)
+ ❯ src/server/health/controller.test.js (0 test)
+ ❯ src/server/app/indexed.test.js (0 test)
+ ❯ scripts/lighthouse/run-audit.test.js (0 test)
+ ❯ src/server/app/routes.test.js (0 test)
+ ❯ src/server/auth/controller.test.js (0 test)
+ ❯ src/server/app/contract.test.js (0 test)
+ ❯ src/server/app/page-maturity/page-maturity.test.js (0 test)
+ ❯ src/server/app/page-maturity/banner.test.js (0 test)
+ ❯ src/server/app/shared/kit.test.js (0 test)
+ ❯ scripts/lighthouse/audit-targets.test.js (0 test)
+ ❯ src/server/app/store-ops.test.js (0 test)
+ ❯ src/server/app/set-completeness.test.js (0 test)
+ ❯ src/server/app/no-set-singletons.test.js (20 tests | 1 failed) 3383ms
+   ❯ no set singletons — every declared route shape is wrapped (2)
+     × Should wrap every method live-animals declares 3133ms
+ ❯ src/server/app/sets/live-animals/journeys/linear/flow/flow-reachability.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/validation-coverage.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/request-view.parity.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/flow/dispatch.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/flow/gates.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/section-caption.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/amend-endings.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/save-actions.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/trail.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/journey-strip.test.js (0 test)
+ ❯ src/server/common/helpers/errors.test.js (0 test)
+ ❯ src/server/common/helpers/serve-static-files.test.js (0 test)
+ ❯ src/server/common/helpers/content-security-policy.test.js (0 test)
+ ❯ src/server/common/helpers/start-server.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/flow/status.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/flow/simulate.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/flow/stored-answers.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/flow/task-rows.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/additional-details/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/cancel-amend/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/cph-number/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/addresses/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/delete-notification/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/confirmation/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/check-answers.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/declaration/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/dashboard/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/documents/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/hub/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/notification-actions/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/import-reason/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/origin/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/permanent-address/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/addresses/address-return/controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/addresses/party-edit/party-edit.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/addresses/party-picker/party-picker.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/confirmation/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/cph-number/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/animal-identification.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/commodities/consignment-details/consignment-details.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/declaration/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/commodities/search/search.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/transport/commercial-transporter-details/commercial-transporter-details.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/import-reason/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/transport/transporter-add/transporter-add.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/transport/transporters/transporters.controller.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.test.js (0 test)
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/records/append.test.js (0 test)
+Not implemented: HTMLFormElement's requestSubmit() method
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 74 ⎯⎯⎯⎯⎯⎯
+
+ FAIL  scripts/lighthouse/audit-targets.test.js [ scripts/lighthouse/audit-targets.test.js ]
+ FAIL  scripts/lighthouse/run-audit.test.js [ scripts/lighthouse/run-audit.test.js ]
+ FAIL  src/server/router.test.js [ src/server/router.test.js ]
+ FAIL  src/server/auth/controller.test.js [ src/server/auth/controller.test.js ]
+ FAIL  src/server/app/co-residency.test.js [ src/server/app/co-residency.test.js ]
+ FAIL  src/server/app/contract.test.js [ src/server/app/contract.test.js ]
+ FAIL  src/server/app/indexed.test.js [ src/server/app/indexed.test.js ]
+ FAIL  src/server/app/routes.test.js [ src/server/app/routes.test.js ]
+ FAIL  src/server/app/set-completeness.test.js [ src/server/app/set-completeness.test.js ]
+ FAIL  src/server/app/store-ops.test.js [ src/server/app/store-ops.test.js ]
+ FAIL  src/server/health/controller.test.js [ src/server/health/controller.test.js ]
+ FAIL  src/server/app/page-maturity/banner.test.js [ src/server/app/page-maturity/banner.test.js ]
+ FAIL  src/server/app/page-maturity/page-maturity.test.js [ src/server/app/page-maturity/page-maturity.test.js ]
+ FAIL  src/server/app/shared/kit.test.js [ src/server/app/shared/kit.test.js ]
+ FAIL  src/server/common/helpers/content-security-policy.test.js [ src/server/common/helpers/content-security-policy.test.js ]
+ FAIL  src/server/common/helpers/errors.test.js [ src/server/common/helpers/errors.test.js ]
+ FAIL  src/server/common/helpers/serve-static-files.test.js [ src/server/common/helpers/serve-static-files.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/amend-endings.test.js [ src/server/app/sets/live-animals/journeys/linear/features/amend-endings.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/journey-strip.test.js [ src/server/app/sets/live-animals/journeys/linear/features/journey-strip.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/request-view.parity.test.js [ src/server/app/sets/live-animals/journeys/linear/features/request-view.parity.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/save-actions.test.js [ src/server/app/sets/live-animals/journeys/linear/features/save-actions.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/section-caption.test.js [ src/server/app/sets/live-animals/journeys/linear/features/section-caption.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/trail.test.js [ src/server/app/sets/live-animals/journeys/linear/features/trail.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/validation-coverage.test.js [ src/server/app/sets/live-animals/journeys/linear/features/validation-coverage.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/flow/dispatch.test.js [ src/server/app/sets/live-animals/journeys/linear/flow/dispatch.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.test.js [ src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/flow/flow-reachability.test.js [ src/server/app/sets/live-animals/journeys/linear/flow/flow-reachability.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/flow/gates.test.js [ src/server/app/sets/live-animals/journeys/linear/flow/gates.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/flow/simulate.test.js [ src/server/app/sets/live-animals/journeys/linear/flow/simulate.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/flow/status.test.js [ src/server/app/sets/live-animals/journeys/linear/flow/status.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/flow/stored-answers.test.js [ src/server/app/sets/live-animals/journeys/linear/flow/stored-answers.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/flow/task-rows.test.js [ src/server/app/sets/live-animals/journeys/linear/flow/task-rows.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/additional-details/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/additional-details/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/cancel-amend/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/cancel-amend/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/check-answers/check-answers.test.js [ src/server/app/sets/live-animals/journeys/linear/features/check-answers/check-answers.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js [ src/server/app/sets/live-animals/journeys/linear/features/check-answers/refusal.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/addresses/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/addresses/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/confirmation/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/confirmation/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/cph-number/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/cph-number/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/dashboard/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/dashboard/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/delete-notification/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/delete-notification/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/declaration/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/declaration/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/documents/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/documents/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/hub/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/hub/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/import-reason/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/import-reason/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/notification-actions/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/notification-actions/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/origin/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/origin/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/permanent-address/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/permanent-address/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/check-answers/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/check-answers/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/addresses/address-return/controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/addresses/address-return/controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/addresses/party-edit/party-edit.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/addresses/party-edit/party-edit.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/addresses/party-picker/party-picker.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/addresses/party-picker/party-picker.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/confirmation/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/confirmation/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/cph-number/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/cph-number/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/animal-identification.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/animal-identification.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/commodities/consignment-details/consignment-details.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/commodities/consignment-details/consignment-details.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/commodities/search/search.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/commodities/search/search.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/declaration/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/declaration/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/import-reason/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/import-reason/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.test.js [ src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/transport/commercial-transporter-details/commercial-transporter-details.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/transport/commercial-transporter-details/commercial-transporter-details.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/transport/transporter-add/transporter-add.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/transport/transporter-add/transporter-add.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/transport/transporters/transporters.controller.test.js [ src/server/app/sets/live-animals/journeys/linear/features/transport/transporters/transporters.controller.test.js ]
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/records/append.test.js [ src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/records/append.test.js ]
+Error: Cannot find module '../../../../../commodities/line-title.js' imported from /Users/tarun/git/defra/trade-imports-workspace/repos/trade-imports-animals-frontend/src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.js
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.js:4:1
+      2| import { copy as sharedEn } from '../../../../../../../../../../shared…
+      3| import { copy as sharedCy } from '../../../../../../../../../../shared…
+      4| import { lineTitle } from '../../../../../commodities/line-title.js'
+       | ^
+      5|
+      6| const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-cards.js:6:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/75]⎯
+
+ FAIL  src/server/common/helpers/start-server.test.js [ src/server/common/helpers/start-server.test.js ]
+Error: [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock
+ ❯ src/server/common/helpers/start-server.js:3:1
+      1| import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net'
+      2|
+      3| import { createServer } from '../../server.js'
+       | ^
+      4| import { config } from '../../../config/config.js'
+      5| import { useRetryingKeepAliveAgentForWreck } from '../../../auth/wreck…
+ ❯ src/server/common/helpers/start-server.test.js:28:1
+
+Caused by: Error: Cannot find module '../../../../../commodities/line-title.js' imported from /Users/tarun/git/defra/trade-imports-workspace/repos/trade-imports-animals-frontend/src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.js
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.js:4:1
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-cards.js:6:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/75]⎯
+
+ FAIL  src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.test.js [ src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.test.js ]
+Error: Cannot find module '../../../../../commodities/line-title.js' imported from /Users/tarun/git/defra/trade-imports-workspace/repos/trade-imports-animals-frontend/src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.js
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.js:4:1
+      2| import { copy as sharedEn } from '../../../../../../../../../../shared…
+      3| import { copy as sharedCy } from '../../../../../../../../../../shared…
+      4| import { lineTitle } from '../../../../../commodities/line-title.js'
+       | ^
+      5|
+      6| const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.test.js:4:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/75]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/app/no-set-singletons.test.js > no set singletons — every declared route shape is wrapped > Should wrap every method live-animals declares
+Error: Cannot find module '../../../../../commodities/line-title.js' imported from /Users/tarun/git/defra/trade-imports-workspace/repos/trade-imports-animals-frontend/src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.js
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-card-title.js:4:1
+      2| import { copy as sharedEn } from '../../../../../../../../../../shared…
+      3| import { copy as sharedCy } from '../../../../../../../../../../shared…
+      4| import { lineTitle } from '../../../../../commodities/line-title.js'
+       | ^
+      5|
+      6| const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
+ ❯ src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/species/species-cards.js:6:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/75]⎯
+
+
+ Test Files  75 failed | 196 passed | 2 skipped (273)
+      Tests  1 failed | 2273 passed | 9 skipped (2283)
+   Start at  09:32:35
+   Duration  173.61s (setup 90%, import 4%, tests 2%, transform 2%, worker 2%, environment 1%)
+
+    Isolate  273 workers spawned · ~653ms startup each (spawn + environment, per file)
+             at least ~11.23s faster with isolate: false — reuses workers across files instead of one per file
+
+
+=== Socket Firewall ===
+
+Warning: Socket Firewall did not detect any package fetch attempts
+

@@ -18,8 +18,6 @@ export const STUB_BOOK = [
   'origin-farm|Origin Farm|1 Farm Lane|Ennis|V95 X7P2|Ireland|IE|PLACE_OF_ORIGIN',
   'british-livestock-ltd|British Livestock Ltd|10 Market Street|Leeds|LS1 6HB|United Kingdom|GB|CONSIGNEE',
   'import-co-uk|Import Co UK|20 Trade Road|London|EC1A 1BB|United Kingdom|GB|IMPORTER',
-  'animal-and-plant-health-agency|Animal and Plant Health Agency|Woodham Lane|Addlestone|KT15 3NB|United Kingdom|GB|BRANCH_ADDRESS',
-  'riverside-distribution-centre|Riverside Distribution Centre|4 Riverside Way|Bristol|BS1 6XN|United Kingdom|GB|BRANCH_ADDRESS',
   'danish-meat-export-aps|Danish Meat Export ApS|Havnegade 21|Copenhagen|1058|Denmark|DK|CONSIGNOR',
   'jutland-swine-aps|Jutland Swine ApS|Sondergade 4|Aarhus|8000|Denmark|DK|CONSIGNOR',
   'laiterie-du-nord|Laiterie du Nord SARL|12 Rue de la Gare|Lille|59000|France|FR|CONSIGNOR',
