@@ -158,11 +158,6 @@ const AFTER_REASON = [
   }
 ]
 
-const CONTACT_STEP = {
-  slug: 'consignment/contact/select',
-  fields: firstOption('contactAddress')
-}
-
 const REASON_REVEAL_FIELDS = new Map([
   [
     'internalMarket',
@@ -247,8 +242,7 @@ export const seedSteps = ({ reasonForImport, transporterType }) => [
   reasonStep(reasonForImport),
   ...AFTER_REASON,
   { slug: 'transporters/add', fields: { transporterType } },
-  ...branchFor(TRANSPORTER_STEPS, transporterType, 'transporter type'),
-  CONTACT_STEP
+  ...branchFor(TRANSPORTER_STEPS, transporterType, 'transporter type')
 ]
 
 const fieldsFor = (step, page) =>

@@ -31,7 +31,6 @@ import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as additionalDetailsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.en.js'
 import { copy as addressesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.en.js'
 import { copy as checkAnswersCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/check-answers/copy/copy.en.js'
-import { copy as contactCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/contact/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
 import { copy as documentsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.en.js'
 import { copy as hubCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.en.js'
@@ -1042,11 +1041,7 @@ export const LANDINGS = {
     title: transportCopy.transporters.title
   },
   documents: { slug: 'accompanying-documents', title: documentsCopy.title },
-  addresses: { slug: 'addresses', title: addressesCopy.hub.title },
-  contactAddress: {
-    slug: 'consignment/contact/select',
-    title: contactCopy.title
-  }
+  addresses: { slug: 'addresses', title: addressesCopy.hub.title }
 }
 
 export const expectLanding = async (page, { slug, title }) => {
@@ -1294,7 +1289,8 @@ export const answerConsignmentAddresses = async (page) => {
   }
   await addPlaceOfDestination(page)
   await answerCphNumberFromAddLink(page)
-  await saveAndExpectLanding(page, LANDINGS.contactAddress)
+  await save(page)
+  await expectDraftReview(page)
 }
 
 export const answerCphNumber = async (page) => {
@@ -1590,16 +1586,6 @@ export const answerTransporter = async (page) => {
   await saveAndExpectLanding(page, LANDINGS.documents)
 }
 
-const chooseContactAddress = (page) =>
-  page
-    .getByRole('radio', { name: partyPickerName(values.contactAddress) })
-    .check()
-
-export const answerContactAddress = async (page) => {
-  await chooseContactAddress(page)
-  await save(page)
-}
-
 /**
  * Answers the whole notification one task row at a time.
  *
@@ -1657,14 +1643,6 @@ export const completeAnswerSections = async (
   await task('Transport details')
   await answerTransporter(page)
   await openOverview(page)
-
-  await task('Contact address for this consignment')
-  await chooseContactAddress(page)
-  await saveAndReturnToHub(
-    page,
-    contactCopy.saveActions.saveAndReturnToHub
-  ).click()
-  await expectOverview(page)
 }
 
 export const openReviewFromHub = async (page) => {

@@ -44,6 +44,14 @@ process. The fixture is the smallest set that fills every `configure*` seam and
 mounts under its own prefix. Its routes echo the configuration they resolve, so
 a test can read back which set answered and with whose obligations.
 
+[`co-residency.test.js`](../co-residency.test.js) boots the production router
+instead of composing it by hand, so it checks the composition the server runs.
+It mounts a third realm whose `onPreAuth` extension counts the routes it runs
+on: an extension registered without `{ sandbox: 'plugin' }` would be
+server-wide, and the counter would tick on the other sets' routes. Its cookie
+jar reads `Set-Cookie` the way a browser does, so a cookie's `Path` attribute
+decides which requests carry it back.
+
 [`set-completeness.test.js`](../set-completeness.test.js) proves a set that
 forgets a seam does not mount. Three seams answer benignly when unconfigured:
 the journey flow returns no sections and no task rows, the session returns the

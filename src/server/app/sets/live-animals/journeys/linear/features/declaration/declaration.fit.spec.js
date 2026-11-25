@@ -48,8 +48,7 @@ const UNFINISHED_CARD_MESSAGES = [
   checkAnswersCopy.errors.cards.additionalDetails,
   checkAnswersCopy.errors.cards.arrivalDetails,
   checkAnswersCopy.errors.cards.transportDetails,
-  checkAnswersCopy.errors.cards.consignmentAddresses,
-  checkAnswersCopy.errors.cards.contactAddress
+  checkAnswersCopy.errors.cards.consignmentAddresses
 ]
 
 const declareInAnotherTab = async (page) => {

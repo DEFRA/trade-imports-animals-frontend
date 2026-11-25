@@ -4,6 +4,14 @@ import { ensureAddressBookCoversEverySelectableRole } from './seed-address-book.
 
 const ADDRESSES_PATH = '/organisation/5900001/addresses'
 
+const SELECTABLE_ADDRESS_ROLES = [
+  'PLACE_OF_ORIGIN',
+  'CONSIGNOR',
+  'CONSIGNEE',
+  'IMPORTER',
+  'PLACE_OF_DESTINATION'
+]
+
 const listResponse = (items) => ({
   ok: true,
   status: 200,
@@ -38,14 +46,9 @@ describe('#ensureAddressBookCoversEverySelectableRole', () => {
     await ensureAddressBookCoversEverySelectableRole()
 
     const created = requestsTo(fetchSpy.mock.calls, 'POST')
-    expect(created.map(({ body }) => body.roles)).toEqual([
-      ['PLACE_OF_ORIGIN'],
-      ['CONSIGNOR'],
-      ['CONSIGNEE'],
-      ['IMPORTER'],
-      ['PLACE_OF_DESTINATION'],
-      ['BRANCH_ADDRESS']
-    ])
+    expect(created.map(({ body }) => body.roles)).toEqual(
+      SELECTABLE_ADDRESS_ROLES.map((role) => [role])
+    )
     expect(created.every(({ url }) => url.includes(ADDRESSES_PATH))).toBe(true)
   })
 
@@ -53,14 +56,9 @@ describe('#ensureAddressBookCoversEverySelectableRole', () => {
     const fetchSpy = vi
       .fn()
       .mockResolvedValue(
-        listResponse([
-          addressHolding('PLACE_OF_ORIGIN'),
-          addressHolding('CONSIGNOR'),
-          addressHolding('CONSIGNEE'),
-          addressHolding('IMPORTER'),
-          addressHolding('PLACE_OF_DESTINATION'),
-          addressHolding('BRANCH_ADDRESS')
-        ])
+        listResponse(
+          SELECTABLE_ADDRESS_ROLES.map((role) => addressHolding(role))
+        )
       )
     vi.stubGlobal('fetch', fetchSpy)
 
@@ -79,13 +77,11 @@ describe('#ensureAddressBookCoversEverySelectableRole', () => {
     await ensureAddressBookCoversEverySelectableRole()
 
     const created = requestsTo(fetchSpy.mock.calls, 'POST')
-    expect(created.map(({ body }) => body.roles)).toEqual([
-      ['PLACE_OF_ORIGIN'],
-      ['CONSIGNEE'],
-      ['IMPORTER'],
-      ['PLACE_OF_DESTINATION'],
-      ['BRANCH_ADDRESS']
-    ])
+    expect(created.map(({ body }) => body.roles)).toEqual(
+      SELECTABLE_ADDRESS_ROLES.filter((role) => role !== 'CONSIGNOR').map(
+        (role) => [role]
+      )
+    )
   })
 
   it('throws when listing the address book fails', async () => {

@@ -285,9 +285,8 @@ bundles. A value label that the feature's own page already shows is read from
 that feature's label function, never copied into the check-answers copy. Value
 labels only the review shows go in the check-answers copy bundles.
 
-A section id carries a suffix (`documents-section`,
-`contact-address-section`) where a card owns the bare id the error summary
-links to.
+A section id carries a suffix (`documents-section`) where a card owns the bare
+id the error summary links to.
 
 The card heading carries the Change link for the answers inside the card.
 The exceptions carry their own link: the first row of each species block, each

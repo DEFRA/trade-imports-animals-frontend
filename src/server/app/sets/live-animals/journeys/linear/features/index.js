@@ -19,7 +19,6 @@ import * as transporters from './transport/transporters/transporters.controller.
 import * as transporterAdd from './transport/transporter-add/transporter-add.controller.js'
 import * as commercialTransporterDetails from './transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details/private-transporter-details.controller.js'
-import * as contactSelect from './contact/controller.js'
 import * as cya from './check-answers/controller.js'
 import * as cancelAmend from './cancel-amend/controller.js'
 import * as notificationActions from './notification-actions/controller.js'
@@ -42,7 +41,6 @@ export const dispatchPages = [
   portOfEntry.meta,
   transitCountries.meta,
   transporters.meta,
-  contactSelect.meta,
   declaration.meta
 ]
 
@@ -68,7 +66,6 @@ export const allRoutes = [
   ...transporterAdd.routes,
   ...commercialTransporterDetails.routes,
   ...privateTransporterDetails.routes,
-  ...contactSelect.routes,
   ...cya.routes,
   ...cancelAmend.routes,
   ...notificationActions.routes,

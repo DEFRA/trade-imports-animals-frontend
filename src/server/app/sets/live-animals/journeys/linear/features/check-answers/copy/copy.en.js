@@ -14,8 +14,7 @@ export const copy = {
     descriptionOfTheGoods: '2. Description of the goods',
     transportAndArrival: '3. Transport and arrival',
     documents: '4. Uploaded documents',
-    addresses: '5. Addresses',
-    contactAddress: '6. Contact address'
+    addresses: '5. Addresses'
   },
   cards: {
     originOfImport: 'Origin of import',
@@ -24,8 +23,7 @@ export const copy = {
     additionalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
     transportDetails: 'Transport details',
-    consignmentAddresses: 'Consignment addresses',
-    contactAddress: 'Contact address'
+    consignmentAddresses: 'Consignment addresses'
   },
   groups: {
     transitCountries: 'Transit countries',
@@ -55,7 +53,6 @@ export const copy = {
     transportDocumentReference: 'Transport document reference',
     name: 'Name',
     address: 'Address',
-    contactAddress: 'Contact address',
     country: 'Country',
     approvalNumber: 'Approval number',
     type: 'Type',
@@ -84,8 +81,7 @@ export const copy = {
       additionalDetails: 'additional details',
       arrivalDetails: 'arrival details',
       transportDetails: 'transport details',
-      consignmentAddresses: 'consignment addresses',
-      contactAddress: 'contact address'
+      consignmentAddresses: 'consignment addresses'
     },
     document: (n) => `document ${n}`,
     rows: {
@@ -122,7 +118,6 @@ export const copy = {
       arrivalDetails: 'Complete arrival details',
       transportDetails: 'Complete transport details',
       consignmentAddresses: 'Complete consignment addresses',
-      contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
     },
     species: {
@@ -138,8 +133,7 @@ export const copy = {
       consignee: 'Correct the address details for the consignee',
       importer: 'Correct the address details for the importer',
       placeOfDestination:
-        'Correct the address details for the place of destination',
-      contactAddress: 'Correct the contact address details for this consignment'
+        'Correct the address details for the place of destination'
     }
   }
 }

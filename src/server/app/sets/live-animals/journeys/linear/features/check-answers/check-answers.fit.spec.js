@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
   addDocument,
-  answerContactAddress,
   amendChangeOriginAndOpenCancel,
   amendFromList,
   backLink,
@@ -71,8 +70,6 @@ import { copy as declarationCopy } from '../declaration/copy/copy.en.js'
 import { copy as deleteCopy } from '../delete-notification/copy/copy.en.js'
 import { copy as cancelAmendCopy } from '../cancel-amend/copy/copy.en.js'
 import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
-import { copy as contactCopy } from '../contact/copy/copy.en.js'
-import { copy as partyEditCopy } from '../addresses/party-edit/copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { formatMomentAsLongDay } from '../../../../../../lib/validate/index.js'
@@ -98,15 +95,6 @@ const ARRIVAL_DETAILS_ROW_LABELS = [
 ]
 
 const main = (page) => page.getByRole('main')
-
-const expectReviewShowing = (page) =>
-  expect(
-    page.getByRole('heading', {
-      level: 1,
-      name: journeyIdFromPage(page),
-      exact: true
-    })
-  ).toBeVisible()
 
 const headerButtonGroup = (page) =>
   main(page).locator('.govuk-button-group').first()
@@ -413,7 +401,7 @@ test.describe('check-answers feature section structure', () => {
     await signIn(page)
   })
 
-  test('numbers the six sections in order', async ({ page }) => {
+  test('numbers the five sections in order', async ({ page }) => {
     await startNotification(page)
     await openNotificationView(page)
 
@@ -424,12 +412,11 @@ test.describe('check-answers feature section structure', () => {
       copy.sections.descriptionOfTheGoods,
       copy.sections.transportAndArrival,
       copy.sections.documents,
-      copy.sections.addresses,
-      copy.sections.contactAddress
+      copy.sections.addresses
     ])
   })
 
-  test('ends with Continue alone in its last block, and nothing after it', async ({
+  test('titles the page by its reference and ends with the Addresses section, then Continue alone in the last block with nothing after it', async ({
     page
   }) => {
     await startNotification(page)
@@ -443,15 +430,16 @@ test.describe('check-answers feature section structure', () => {
     )
     await expect(
       page.getByRole('main').getByRole('heading', { level: 2 }).last()
-    ).toHaveText(copy.sections.contactAddress)
+    ).toHaveText(copy.sections.addresses)
 
     const lastBlock = page.getByRole('main').locator('form').last()
     await expect(lastBlock.locator('xpath=following-sibling::*')).toHaveCount(0)
 
     await expect(
-      lastBlock
-        .locator('xpath=preceding-sibling::*[1]')
-        .getByRole('heading', { name: copy.cards.contactAddress, level: 3 })
+      lastBlock.locator('xpath=preceding-sibling::*[1]').getByRole('heading', {
+        name: copy.cards.consignmentAddresses,
+        level: 3
+      })
     ).toBeVisible()
 
     await expect(
@@ -482,9 +470,7 @@ test.describe('check-answers feature section structure', () => {
       copy.sections.documents,
       copy.documentN(1),
       copy.sections.addresses,
-      copy.cards.consignmentAddresses,
-      copy.sections.contactAddress,
-      copy.cards.contactAddress
+      copy.cards.consignmentAddresses
     ])
 
     await expect(
@@ -499,8 +485,7 @@ test.describe('check-answers feature section structure', () => {
       copy.sections.descriptionOfTheGoods,
       copy.sections.transportAndArrival,
       copy.sections.documents,
-      copy.sections.addresses,
-      copy.sections.contactAddress
+      copy.sections.addresses
     ])
     await expect(
       page.getByRole('main').getByRole('heading', { level: 3 })
@@ -512,8 +497,7 @@ test.describe('check-answers feature section structure', () => {
       copy.cards.arrivalDetails,
       copy.cards.transportDetails,
       copy.documentN(1),
-      copy.cards.consignmentAddresses,
-      copy.cards.contactAddress
+      copy.cards.consignmentAddresses
     ])
   })
 })
@@ -783,8 +767,7 @@ test.describe('check-answers feature change links', () => {
         copy.hidden.cards.arrivalDetails,
         copy.hidden.cards.transportDetails,
         copy.hidden.document(1),
-        copy.hidden.cards.consignmentAddresses,
-        copy.hidden.cards.contactAddress
+        copy.hidden.cards.consignmentAddresses
       ].map((hiddenText) => {
         const name = RegExp.escape(`${copy.change} ${hiddenText}`)
         return new RegExp(`^${name}( \\(.+\\))?$`)
@@ -808,56 +791,6 @@ test.describe('check-answers feature change links', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: addressesCopy.hub.title })
     ).toBeVisible()
-  })
-
-  test('opens the contact address page from the contact address card', async ({
-    page
-  }) => {
-    await startNotification(page)
-    await openNotificationView(page)
-
-    const changeLink = cardChangeLink(page, copy.hidden.cards.contactAddress)
-    await expect(changeLink).toHaveAttribute(
-      'href',
-      /\/consignment\/contact\/select\?from=/
-    )
-    await changeLink.click()
-
-    await expect(
-      page.getByRole('heading', { level: 1, name: contactCopy.title })
-    ).toBeVisible()
-  })
-
-  test('edits a chosen contact address from the review, returning to the review showing the edit, or unchanged when cancelled', async ({
-    page
-  }) => {
-    const editedTown = 'Editedtown'
-    await startNotification(page)
-    await page.goto(journeyUrl(page, 'consignment/contact/select'))
-    await answerContactAddress(page)
-    await openNotificationView(page)
-    const editLink = reviewCardFor(page, copy.cards.contactAddress).getByRole(
-      'link',
-      { name: `${copy.editDetails} contact address` }
-    )
-    const contactRow = reviewCardFor(page, copy.cards.contactAddress)
-      .getByRole('definition')
-      .first()
-    const addressBefore = await contactRow.innerText()
-
-    await editLink.click()
-    await expect(
-      page.getByRole('heading', { level: 1, name: partyEditCopy.title })
-    ).toBeVisible()
-    await page.getByRole('button', { name: partyEditCopy.cancel }).click()
-    await expectReviewShowing(page)
-    await expect(contactRow).toHaveText(addressBefore, { useInnerText: true })
-
-    await editLink.click()
-    await page.getByLabel(partyEditCopy.fields.townOrCity).fill(editedTown)
-    await page.getByRole('button', { name: partyEditCopy.save }).click()
-    await expectReviewShowing(page)
-    await expect(contactRow).toContainText(editedTown)
   })
 })
 
@@ -1267,8 +1200,7 @@ test.describe('check-answers feature draft notification reached from Review and 
       ['additionalDetails', '#additional-details'],
       ['arrivalDetails', ARRIVAL_DETAILS_ANCHOR],
       ['transportDetails', TRANSPORT_DETAILS_ANCHOR],
-      ['consignmentAddresses', '#addresses'],
-      ['contactAddress', '#contact-address']
+      ['consignmentAddresses', '#addresses']
     ]
     const cardsShowingTheirMessage = unfinishedCards.filter(
       ([card]) => card !== 'commodityDetails'
