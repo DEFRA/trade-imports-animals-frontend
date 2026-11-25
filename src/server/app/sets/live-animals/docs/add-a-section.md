@@ -426,9 +426,15 @@ first. Its tags are `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa`:
 axe-core tags a rule by the WCAG version that introduced it, so a rule
 reachable only through the 2.1 or 2.2 tags would never run on the two WCAG 2.0
 tags alone. It fails on every `serious` or `critical` violation and filters the
-one proved component false positive: govuk-frontend's conditional reveal puts
-`aria-expanded` on a radio or checkbox, which axe reports as
-`aria-allowed-attr`.
+two proved govuk-frontend false positives:
+
+- govuk-frontend's conditional reveal puts `aria-expanded` on a radio or
+  checkbox, which axe reports as `aria-allowed-attr`.
+- govuk-frontend's file upload button shows its status text and its "Choose
+  file" pseudo-button as separate blocks with no space between them. axe 4.14
+  reads them as one word ("No file chosenChoose file") and reports
+  `label-content-name-mismatch`, though the browser's accessible name holds
+  the visible text.
 
 ## 11. Run every check
 
