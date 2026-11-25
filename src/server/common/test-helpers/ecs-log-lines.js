@@ -4,6 +4,19 @@ import { config } from '../../../config/config.js'
 import { createLogger, writeLogsTo } from '../helpers/logging/logger.js'
 
 /**
+ * Matches the fields the ECS format writes on every line, whatever the code
+ * logs: spread it into an expected line to compare the rest exactly.
+ */
+export const ECS_PLATFORM_FIELDS = {
+  '@timestamp': expect.any(String),
+  'ecs.version': expect.any(String),
+  'event.dataset': expect.any(String),
+  'host.hostname': expect.any(String),
+  'process.pid': expect.any(Number),
+  'service.name': expect.any(String)
+}
+
+/**
  * Keeps, parsed, every line the module logger and its child loggers write at
  * the configured log level during each test of the enclosing `describe`, in
  * place of the logger's output. Needs `LOG_FORMAT` `ecs`. Puts back the logger's

@@ -18,7 +18,7 @@ const isConnectError = (error) =>
 const fetchOnce = (url, init) =>
   dispatcher ? fetch(url, { ...init, dispatcher }) : fetch(url, init)
 
-const fetchRetryingConnection = async (logger, url, init) => {
+const fetchRetryingConnection = async (logger, operation, url, init) => {
   try {
     return await fetchOnce(url, init)
   } catch (error) {
@@ -26,8 +26,8 @@ const fetchRetryingConnection = async (logger, url, init) => {
       throw error
     }
     logger.warn(
-      { err: error, method: init?.method ?? 'GET', url: String(url) },
-      'Backend connection did not open, retrying once'
+      { err: error },
+      `Backend connection for ${operation} did not open, retrying once`
     )
     return fetchOnce(url, init)
   }
@@ -41,7 +41,7 @@ const fetchRetryingConnection = async (logger, url, init) => {
  */
 export const createBackendFetch = (logger) => (operation, url, init) =>
   measureExternalResponse({ dependency: BACKEND_DEPENDENCY, operation }, () =>
-    fetchRetryingConnection(logger, url, init)
+    fetchRetryingConnection(logger, operation, url, init)
   )
 
 /**

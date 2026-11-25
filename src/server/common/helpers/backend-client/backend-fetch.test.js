@@ -115,22 +115,23 @@ describe('backendFetch', () => {
       )
     })
 
-    test('logs one warning with the failed connection, the method and the URL', async () => {
+    test('logs one warning with the failed connection and the operation in its message, and no other field', async () => {
       fetchMock.mockRejectOnce(connectTimedOut())
 
       await backendFetch(OPERATION, BACKEND_URL, INIT)
 
       expect(loggedLines).toEqual([
-        expect.objectContaining({
+        {
           level: pino.levels.values.warn,
-          msg: 'Backend connection did not open, retrying once',
-          method: 'PUT',
-          url: BACKEND_URL,
+          time: expect.any(Number),
+          pid: expect.any(Number),
+          hostname: expect.any(String),
+          msg: 'Backend connection for replace-notification did not open, retrying once',
           err: expect.objectContaining({
             type: 'TypeError',
             message: 'fetch failed: UND_ERR_CONNECT_TIMEOUT'
           })
-        })
+        }
       ])
     })
 

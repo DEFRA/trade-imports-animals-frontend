@@ -15,7 +15,6 @@ export const failed = async (operation, response) => {
       }
     } catch (err) {
       error.cause = err
-      error.responseBody = 'not-json'
     }
   }
   return error

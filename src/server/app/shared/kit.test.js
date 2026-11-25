@@ -331,8 +331,10 @@ describe('#recoverableSave', () => {
     ).toEqual([
       expect.objectContaining({
         message: 'Backend refused request',
-        status: 503,
-        journeyId: 'journey-1'
+        event: { reference: 'journey-1' },
+        error: expect.objectContaining({
+          message: expect.stringMatching(/: 503 /)
+        })
       })
     ])
     expect(ecsLog.linesWithMessage(SAVE_FALLBACK_LOG_MESSAGE)).toEqual([

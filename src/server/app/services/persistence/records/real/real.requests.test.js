@@ -15,7 +15,10 @@ import {
 import { fulfilmentToNotification } from '../mapper.js'
 import { isRecoverableBackendError } from '../errors.js'
 import { withOrganisationId } from '../../../../../common/helpers/organisation-id.js'
-import { recordEcsLogLines } from '../../../../../common/test-helpers/ecs-log-lines.js'
+import {
+  ECS_PLATFORM_FIELDS,
+  recordEcsLogLines
+} from '../../../../../common/test-helpers/ecs-log-lines.js'
 import { mapStatus, records } from './index.js'
 
 const DEFAULT_TEST_ORG = '5900001'
@@ -62,6 +65,18 @@ const canonical = ({
 const jsonOf = (request) => request.clone().json()
 
 const REFUSAL_LOG_MESSAGE = 'Backend refused request'
+
+const refusalLine = ({ error, ...fields }) => ({
+  ...ECS_PLATFORM_FIELDS,
+  'log.level': 'warn',
+  message: REFUSAL_LOG_MESSAGE,
+  ...fields,
+  error: {
+    type: 'BackendRequestError',
+    stack_trace: expect.stringMatching(/^BackendRequestError: /),
+    ...error
+  }
+})
 
 describe('real records adapter — canonical fulfilment boundary', () => {
   const ecsLog = recordEcsLogLines()
@@ -182,7 +197,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     }
   )
 
-  it('Should log one warn line with the reference, organisation and status as fields when the fulfilment GET returns 403', async () => {
+  it('Should log one warn line with the journey as event.reference, and the organisation and status in the message, when the fulfilment GET returns 403', async () => {
     fetchMocker.mockResponse('Forbidden', { status: 403 })
 
     const loaded = await asDefaultOrganisation(() =>
@@ -191,13 +206,12 @@ describe('real records adapter — canonical fulfilment boundary', () => {
 
     expect(loaded).toBeUndefined()
     expect(ecsLog.linesBesideExternalCalls()).toEqual([
-      expect.objectContaining({
+      {
+        ...ECS_PLATFORM_FIELDS,
         'log.level': 'warn',
-        message: 'Backend refused fulfilment read',
-        journeyId,
-        organisationId: DEFAULT_TEST_ORG,
-        status: 403
-      })
+        message: `Backend refused fulfilment read for organisation ${DEFAULT_TEST_ORG}: 403`,
+        event: { reference: journeyId }
+      }
     ])
   })
 
@@ -410,8 +424,11 @@ describe('real records adapter — lifecycle and list', () => {
     )
   })
 
-  it('Should reject a 409 submit whose body is not JSON without a code, and log one warn line with the operation, status, journey id and a not-JSON response body and no code', async () => {
-    fetchMocker.mockResponse('Conflict', { status: 409 })
+  it('Should reject a 409 submit whose body is not JSON without a code, and log one warn line with its error and the journey as event.reference', async () => {
+    fetchMocker.mockResponse('Conflict', {
+      status: 409,
+      statusText: 'Conflict'
+    })
 
     const surfaced = await asDefaultOrganisation(() =>
       records.submit(journeyId, actor, 4)
@@ -420,16 +437,14 @@ describe('real records adapter — lifecycle and list', () => {
     expect(surfaced).toMatchObject({ name: 'BackendRequestError', status: 409 })
     expect(surfaced.code).toBeUndefined()
     expect(ecsLog.linesAtLevel('warn')).toEqual([
-      expect.objectContaining({
-        message: REFUSAL_LOG_MESSAGE,
-        operation: 'submit-notification',
-        status: 409,
-        journeyId,
-        responseBody: 'not-json',
-        error: expect.objectContaining({ type: 'BackendRequestError' })
+      refusalLine({
+        event: { reference: journeyId },
+        error: {
+          message:
+            'animals-backend refused to submit notification: 409 Conflict'
+        }
       })
     ])
-    expect(ecsLog.linesAtLevel('warn')[0]).not.toHaveProperty('code')
   })
 
   it('Should copy with the source concurrencyToken as a query parameter (WYSIWYG guarantee)', async () => {
@@ -545,8 +560,11 @@ describe('real records adapter — backend refusals', () => {
     fetchMocker.resetMocks()
   })
 
-  it('Should log one warn line with the operation, status and journey id when the backend refuses the notification PUT', async () => {
-    fetchMocker.mockResponse('Unprocessable', { status: 422 })
+  it('Should log one warn line naming the operation and status in its error, with the journey as event.reference, when the backend refuses the notification PUT', async () => {
+    fetchMocker.mockResponse('Unprocessable', {
+      status: 422,
+      statusText: 'Unprocessable Entity'
+    })
 
     await asDefaultOrganisation(() =>
       records.replaceFulfilment(
@@ -557,20 +575,20 @@ describe('real records adapter — backend refusals', () => {
     ).catch((error) => error)
 
     expect(ecsLog.linesAtLevel('warn')).toEqual([
-      expect.objectContaining({
-        message: REFUSAL_LOG_MESSAGE,
-        operation: 'replace-notification',
-        status: 422,
-        journeyId,
-        error: expect.objectContaining({ type: 'BackendRequestError' })
+      refusalLine({
+        event: { reference: journeyId },
+        error: {
+          message:
+            'animals-backend refused to replace notification: 422 Unprocessable Entity'
+        }
       })
     ])
   })
 
-  it('Should log one warn line with the operation, status, code and journey id and no response body marker when the backend refuses a copy', async () => {
+  it('Should log one warn line with the refusal code as error.code, and the journey as event.reference, when the backend refuses a copy', async () => {
     fetchMocker.mockResponse(
       JSON.stringify({ code: 'STALE_CONCURRENCY_TOKEN' }),
-      { status: 409 }
+      { status: 409, statusText: 'Conflict' }
     )
 
     await asDefaultOrganisation(() => records.copy(journeyId, 7, actor)).catch(
@@ -578,32 +596,33 @@ describe('real records adapter — backend refusals', () => {
     )
 
     expect(ecsLog.linesAtLevel('warn')).toEqual([
-      expect.objectContaining({
-        message: REFUSAL_LOG_MESSAGE,
-        operation: 'copy-notification',
-        status: 409,
-        code: 'STALE_CONCURRENCY_TOKEN',
-        journeyId,
-        error: expect.objectContaining({ type: 'BackendRequestError' })
+      refusalLine({
+        event: { reference: journeyId },
+        error: {
+          message: 'animals-backend refused to copy notification: 409 Conflict',
+          code: 'STALE_CONCURRENCY_TOKEN'
+        }
       })
     ])
-    expect(ecsLog.linesAtLevel('warn')[0]).not.toHaveProperty('responseBody')
   })
 
-  it('Should log one warn line with the operation and status and no journey id when the backend refuses a create', async () => {
-    fetchMocker.mockResponse('Bad Request', { status: 400 })
+  it('Should log one warn line with its error and no event.reference when the backend refuses a create', async () => {
+    fetchMocker.mockResponse('Bad Request', {
+      status: 400,
+      statusText: 'Bad Request'
+    })
 
     await asDefaultOrganisation(() => records.create(actor)).catch(
       (error) => error
     )
 
     expect(ecsLog.linesAtLevel('warn')).toEqual([
-      expect.objectContaining({
-        message: REFUSAL_LOG_MESSAGE,
-        operation: 'create-notification',
-        status: 400
+      refusalLine({
+        error: {
+          message:
+            'animals-backend refused to create notification: 400 Bad Request'
+        }
       })
     ])
-    expect(ecsLog.linesAtLevel('warn')[0]).not.toHaveProperty('journeyId')
   })
 })
