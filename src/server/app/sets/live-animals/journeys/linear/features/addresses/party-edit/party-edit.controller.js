@@ -24,14 +24,14 @@ const view = `${TEMPLATES}/features/addresses/party-edit/party-edit`
 
 const copy = copyFor({ en, cy })
 
-const returnHref = (request, party) => {
+const returnHref = (request) => {
   const { honouredSlug } = kit.readReturnMarker(request, [
     addressesPage.slug,
     kit.CYA_SLUG
   ])
   return kit.carryTrail(
     request,
-    pagePath(request.params.journeyId, honouredSlug ?? party.returnSlug)
+    pagePath(request.params.journeyId, honouredSlug ?? addressesPage.slug)
   )
 }
 
@@ -49,7 +49,7 @@ const render = async (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: returnHref(request, party),
+      backLink: returnHref(request),
       journey,
       recoverableError
     }),
@@ -79,7 +79,7 @@ const get = (party) => async (request, h) => {
 const post = (party) => async (request, h) => {
   const payload = request.payload ?? {}
   if (payload.cancel) {
-    return h.redirect(returnHref(request, party))
+    return h.redirect(returnHref(request))
   }
 
   const { journey, answers } = await state.get(request, h)
@@ -118,7 +118,7 @@ const post = (party) => async (request, h) => {
     return failure
   }
 
-  return h.redirect(returnHref(request, party))
+  return h.redirect(returnHref(request))
 }
 
 export const routes = PARTIES.flatMap((party) =>

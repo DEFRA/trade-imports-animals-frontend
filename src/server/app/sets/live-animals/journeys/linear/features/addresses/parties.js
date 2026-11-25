@@ -1,10 +1,8 @@
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { addressesPage } from './page.js'
 
 const partyCopy = copyFor({ en, cy }).parties
-const returnSlug = addressesPage.slug
 
 export const PARTIES = [
   {
@@ -12,7 +10,6 @@ export const PARTIES = [
     addressBookRole: 'PLACE_OF_ORIGIN',
     slug: 'place-of-origin/select',
     editSlug: 'place-of-origin/edit',
-    returnSlug,
     ...partyCopy.placeOfOrigin
   },
   {
@@ -20,7 +17,6 @@ export const PARTIES = [
     addressBookRole: 'CONSIGNOR',
     slug: 'consignors/select',
     editSlug: 'consignors/edit',
-    returnSlug,
     ...partyCopy.consignor
   },
   {
@@ -28,7 +24,6 @@ export const PARTIES = [
     addressBookRole: 'CONSIGNEE',
     slug: 'consignees/select',
     editSlug: 'consignees/edit',
-    returnSlug,
     ...partyCopy.consignee
   },
   {
@@ -36,7 +31,6 @@ export const PARTIES = [
     addressBookRole: 'IMPORTER',
     slug: 'importers/select',
     editSlug: 'importers/edit',
-    returnSlug,
     ...partyCopy.importer
   },
   {
@@ -44,7 +38,6 @@ export const PARTIES = [
     addressBookRole: 'PLACE_OF_DESTINATION',
     slug: 'destinations/select',
     editSlug: 'destinations/edit',
-    returnSlug,
     ...partyCopy.placeOfDestination
   }
 ]

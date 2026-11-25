@@ -140,7 +140,7 @@ const saveAddressAndLandOnReturnPageWithBanner = async (
   }
   setAddedAddressBanner(h, chosen.name)
   logLanding(request, { journeyId, partyId: party.id, landing, addressId })
-  return h.redirect(pagePath(journeyId, party.returnSlug))
+  return h.redirect(pagePath(journeyId, addressesPage.slug))
 }
 
 const landOnPartyPageWithBanner = (

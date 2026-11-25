@@ -23,6 +23,7 @@ import {
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import { PARTIES } from '../parties.js'
+import { addressesPage } from '../page.js'
 import * as partyEdit from './party-edit.controller.js'
 
 const REVIEW_SLUG = 'notification-view'
@@ -178,7 +179,7 @@ describe.each(PARTIES)('Edit $id address details', (party) => {
     })
 
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, party.returnSlug)
+      redirect: pagePath(result.journeyId, addressesPage.slug)
     })
     expect(result.after[party.id]).toEqual(STORED)
   })
