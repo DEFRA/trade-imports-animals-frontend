@@ -30,7 +30,7 @@ range is rejected by the backend rather than stored.
 The cap guards each line's own number, not the totals the backend derives
 from it. `CommodityComplement.totalNoOfAnimals` and `totalNoOfPackages`
 receive the SUM of a commodity's lines
-([`commodity.js`](../services/persistence/records/notification-mapper/mapper-a/commodity.js)
+([`commodity.js`](../../../services/persistence/records/notification-mapper/mapper-a/commodity.js)
 sends `totalNoOfAnimals: totalOf(group, 'numberOfAnimalsQuantity')` and
 `totalNoOfPackages: totalOf(group, 'numberOfPackages')`), so several lines
 under one CN code can still sum past the field's range, and nothing in the
