@@ -29,27 +29,24 @@ const handshakeToken = 'handshake-token-value'
 const storedName = 'New Farm'
 const UNKNOWN_FULFILMENT_ID = 'not-a-real-obligation'
 
-const partyPagePath = (fulfilmentId, journeyId, query) =>
-  `${pagePath(journeyId, partyForFulfilmentId(fulfilmentId).slug)}${query ?? ''}`
-
 const consignorPicker = (journeyId, query) =>
-  partyPagePath(consignor.id, journeyId, query)
+  `${pagePath(journeyId, partyForFulfilmentId(consignor.id).slug)}${query ?? ''}`
 const consignmentAddressesPage = (journeyId) => pagePath(journeyId, 'addresses')
 
-const handshakeQuery = (fulfilmentId = consignor.id) => ({
-  'fulfilment-id': fulfilmentId,
+const handshakeQuery = () => ({
+  'fulfilment-id': consignor.id,
   'handshake-token': handshakeToken
 })
 
-const returnedQuery = (landing, fulfilmentId = consignor.id) => ({
-  ...handshakeQuery(fulfilmentId),
+const returnedQuery = (landing) => ({
+  ...handshakeQuery(),
   addressId: newAddressId,
   landing
 })
 
-const handshakeState = (fulfilmentId = consignor.id) => ({
+const handshakeState = () => ({
   [addressHandshakeTokensCookie()]: {
-    [fulfilmentId]: handshakeToken
+    [consignor.id]: handshakeToken
   }
 })
 
