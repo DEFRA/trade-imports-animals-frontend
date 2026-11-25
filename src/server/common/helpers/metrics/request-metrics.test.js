@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import hapi from '@hapi/hapi'
 import vision from '@hapi/vision'
-import { vi } from 'vitest'
+import { onTestFinished, vi } from 'vitest'
 
 import { requestMetrics, routePage, routeArea } from './request-metrics.js'
 import { BACKEND_DEPENDENCY } from '../backend-client/backend-dependency.js'
@@ -254,7 +254,14 @@ describe('request metrics', () => {
     ])
   })
 
-  test('a request an earlier onRequest extension answers publishes its time and no page request counts', async () => {
+  test('a request an earlier onRequest extension answers publishes its time and no page request counts, and raises no error', async () => {
+    const unhandledRejections = []
+    const recordUnhandledRejection = (reason) =>
+      unhandledRejections.push(reason)
+    process.on('unhandledRejection', recordUnhandledRejection)
+    onTestFinished(() =>
+      process.off('unhandledRejection', recordUnhandledRejection)
+    )
     config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, true)
     await registerPageServer()
     server.ext('onRequest', (_request, h) => h.response('early').takeover(), {
@@ -270,6 +277,7 @@ describe('request metrics', () => {
     await requestTimesPublished(1)
     await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.documentsWith(PAGE_REQUEST_BACKEND_CALLS)).toEqual([])
+    expect(unhandledRejections).toEqual([])
   })
 
   test('publishes no page request counts when callCounts.metrics.enabled is off at registration', async () => {
