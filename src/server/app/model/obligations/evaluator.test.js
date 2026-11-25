@@ -1325,8 +1325,8 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
   })
 })
 
-describe('trivial applyTo drop fidelity', () => {
-  const trivialAlwaysMandatoryObligations = [
+describe('always-in-scope obligations', () => {
+  const alwaysMandatoryObligations = [
     ['poApprovedReferenceNumber', poApprovedReferenceNumber],
     ['countryOfOrigin', countryOfOrigin],
     ['regionCodeRequirement', regionCodeRequirement],
@@ -1346,11 +1346,11 @@ describe('trivial applyTo drop fidelity', () => {
   ]
 
   const alwaysInScopeObligations = [
-    ...trivialAlwaysMandatoryObligations.map(([, obligation]) => obligation),
+    ...alwaysMandatoryObligations.map(([, obligation]) => obligation),
     internalReferenceNumber
   ]
 
-  it.each(trivialAlwaysMandatoryObligations)(
+  it.each(alwaysMandatoryObligations)(
     '%s evaluates as { inScope: true, status: "mandatory" } on empty input',
     (_name, obligation) => {
       const result = evaluator.evaluate({})
