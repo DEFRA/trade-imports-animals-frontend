@@ -745,7 +745,6 @@ describe('POST /consignors/select — recoverable save failure', () => {
 
     expect(result.after.consignor).toBeUndefined()
     expectRecoverableSaveFallback(result, {
-      err: failure,
       partyId: 'consignor',
       addressId: ALPINE_DAIRY_ID
     })

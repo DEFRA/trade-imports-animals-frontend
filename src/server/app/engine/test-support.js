@@ -492,20 +492,24 @@ const refusalEntry = ({
 export const expectOneRefusalLogged = (logger, refusal) =>
   expectOneLogged(logger, refusalEntry(refusal))
 
-/** The log entry for a save fallback: the journey id, the caught error and
- * any ids the page passed. */
-export const saveFallbackEntry = ({ journeyId, err, ...ids }) => ({
-  level: 'warn',
+/** The log entry for a save fallback: the journey id and any ids the page
+ * passed, at info. */
+export const saveFallbackEntry = ({ journeyId, ...ids }) => ({
+  level: 'info',
   message: SAVE_FALLBACK_LOG_MESSAGE,
-  fields: expect.objectContaining({ journeyId, ...ids, err })
+  fields: expect.objectContaining({ journeyId, ...ids })
 })
 
-export const expectOneSaveFallbackLogged = (logger, fallback) =>
+/** Asserts the logger holds one line, the save fallback's, with no error in
+ * its fields. */
+export const expectOneSaveFallbackLogged = (logger, fallback) => {
   expectOneLogged(logger, saveFallbackEntry(fallback))
+  expect(logger.entries[0].fields).not.toHaveProperty('err')
+}
 
 /** Asserts a save fallback: the page re-rendered with its recoverable
- * banner at HTTP 500, having logged the fallback once with the ids the
- * page passed. */
+ * banner at HTTP 500, having logged the fallback once, at info, with the ids
+ * the page passed. */
 export const expectRecoverableSaveFallback = (result, fallback) => {
   expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   expect(result.view.context.recoverableError).toBe(true)

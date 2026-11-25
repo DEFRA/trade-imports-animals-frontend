@@ -1,6 +1,20 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
 
 import { AMEND, DRAFT, makeScope } from '../engine/index.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
+import { records } from '../services/persistence/records/real/index.js'
+import { createLogger } from '../../common/helpers/logging/logger.js'
+import { withOrganisationId } from '../../common/helpers/organisation-id.js'
+import { recordEcsLogLines } from '../../common/test-helpers/ecs-log-lines.js'
 import { SET_ID } from '../sets/live-animals/set.js'
 import { dispatchPages } from '../sets/live-animals/journeys/linear/features/index.js'
 import { buildDispatch } from '../flow/dispatch.js'
@@ -22,6 +36,7 @@ import {
   pageRoutes,
   REFUSAL_LOG_MESSAGE,
   recoverableSave,
+  SAVE_FALLBACK_LOG_MESSAGE,
   requestSaveChoice,
   returnedSaveChoice,
   setlessBase,
@@ -218,6 +233,17 @@ describe('#pageRoutes — a save refused as stale', () => {
 describe('#recoverableSave', () => {
   const fallbackResponse = { fallback: true }
   const fallback = () => fallbackResponse
+  const ecsLog = recordEcsLogLines()
+  const fetchMocker = createFetchMock(vi)
+
+  beforeEach(() => {
+    fetchMocker.enableMocks()
+    fetchMocker.resetMocks()
+  })
+
+  afterEach(() => {
+    fetchMocker.disableMocks()
+  })
 
   it('Should return the value of a save that succeeds and log nothing', async () => {
     const request = journeyRequest('journey-1')
@@ -232,7 +258,7 @@ describe('#recoverableSave', () => {
     expect(request.logger.entries).toEqual([])
   })
 
-  it('Should log one warning with the journey id and the error, then answer with the fallback, when the backend is unavailable', async () => {
+  it('Should log the fallback once at info with the journey id and no error, then answer with the fallback, when the backend is unavailable', async () => {
     const request = journeyRequest('journey-1')
     const failure = unavailableBackendError('save answers')
 
@@ -246,8 +272,7 @@ describe('#recoverableSave', () => {
 
     expect(outcome).toEqual({ failure: fallbackResponse })
     expectOneSaveFallbackLogged(request.logger, {
-      journeyId: 'journey-1',
-      err: failure
+      journeyId: 'journey-1'
     })
   })
 
@@ -266,9 +291,56 @@ describe('#recoverableSave', () => {
 
     expectOneSaveFallbackLogged(request.logger, {
       journeyId: 'journey-1',
-      uploadId: 'up-1',
-      err: failure
+      uploadId: 'up-1'
     })
+  })
+
+  it('Should write one warn line beside the external-call line, the backend refusal, and the fallback at info with no error, when the backend refuses a save', async () => {
+    fetchMocker.mockResponse('Unavailable', { status: 503 })
+    const request = {
+      params: { journeyId: 'journey-1' },
+      route: { path: '/notifications/{journeyId}/origin' },
+      logger: createLogger()
+    }
+
+    const outcome = await recoverableSave(
+      request,
+      () =>
+        withOrganisationId('5900001', () =>
+          records.replaceFulfilment(
+            'journey-1',
+            assembleFulfilments({ countryOfOrigin: 'FR' }),
+            {
+              known: {
+                journeyId: 'journey-1',
+                status: DRAFT,
+                concurrencyToken: 0
+              }
+            }
+          )
+        ),
+      fallback
+    )
+
+    expect(outcome).toEqual({ failure: fallbackResponse })
+    expect(ecsLog.onlyExternalCallLine().event.outcome).toBe('failure')
+    expect(
+      ecsLog
+        .linesBesideExternalCalls()
+        .filter((line) => line['log.level'] === 'warn')
+    ).toEqual([
+      expect.objectContaining({
+        message: 'Backend refused request',
+        status: 503,
+        journeyId: 'journey-1'
+      })
+    ])
+    expect(ecsLog.linesWithMessage(SAVE_FALLBACK_LOG_MESSAGE)).toEqual([
+      expect.objectContaining({ 'log.level': 'info', journeyId: 'journey-1' })
+    ])
+    expect(
+      ecsLog.linesWithMessage(SAVE_FALLBACK_LOG_MESSAGE)[0]
+    ).not.toHaveProperty('error')
   })
 
   it('Should rethrow a stale concurrency token without logging it', async () => {

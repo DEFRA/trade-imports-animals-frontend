@@ -2184,7 +2184,7 @@ describe('documents — backend and upload service failures', () => {
     spy.mockRestore()
   })
 
-  it('Should log the removal save fallback once with the index, the upload id and the backend error, keeping the document', async () => {
+  it('Should log the removal save fallback at info with the index and the upload id, keeping the document', async () => {
     const { uploadId, seed } = await seededUpload()
     const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
@@ -2199,8 +2199,7 @@ describe('documents — backend and upload service failures', () => {
       saveFallbackEntry({
         journeyId: result.journeyId,
         index: 0,
-        uploadId,
-        err: failure
+        uploadId
       })
     )
   })
@@ -2211,7 +2210,7 @@ describe('documents — backend and upload service failures', () => {
     expectOneLogged(result.logger, alreadyRemovedEntry(result.journeyId))
   })
 
-  it('Should log the retried removal save fallback once, with the backend error, when the notification still cannot be saved', async () => {
+  it('Should log the retried removal save fallback at info, with the index and the upload id, when the notification still cannot be saved', async () => {
     const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       startingFrom: [refusingSaves(failure)],
@@ -2225,8 +2224,7 @@ describe('documents — backend and upload service failures', () => {
       saveFallbackEntry({
         journeyId: result.journeyId,
         index: 0,
-        uploadId: ALREADY_REMOVED_UPLOAD_ID,
-        err: failure
+        uploadId: ALREADY_REMOVED_UPLOAD_ID
       })
     )
   })

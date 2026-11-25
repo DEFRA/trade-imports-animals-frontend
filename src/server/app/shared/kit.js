@@ -338,7 +338,7 @@ export const setlessBase = (title) => ({
 
 /**
  * Runs a save and answers a recoverable backend failure with the page's
- * fallback, logging the failure once at warn.
+ * fallback, logging the fallback taken at info.
  *
  * @param {object} request - the request being answered.
  * @param {() => Promise<*>} saveThunk - makes the save.
@@ -361,12 +361,11 @@ export const recoverableSave = async (
       throw error
     }
     if (isRecoverableBackendError(error)) {
-      request.logger.warn(
+      request.logger.info(
         {
           ...ids,
           journeyId: request.params.journeyId,
-          route: request.route?.path,
-          err: error
+          route: request.route?.path
         },
         SAVE_FALLBACK_LOG_MESSAGE
       )

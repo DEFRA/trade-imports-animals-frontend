@@ -18,7 +18,6 @@ import {
   stubH,
   actWithSessionOrganisation,
   expectOneSaveFallbackLogged,
-  unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import {
@@ -453,7 +452,6 @@ describe('#declaration submit against the real records adapter', () => {
     })
 
     it('Should re-render declaration at 500 with its checked value, the reviewed token, banner and retry form', async () => {
-      const failure = unavailableBackendError('submit-notification')
       backendResponds({
         status: 503,
         statusText: 'Service Unavailable',
@@ -476,8 +474,7 @@ describe('#declaration submit against the real records adapter', () => {
         'live-animals/journeys/linear/features/declaration/template'
       )
       expectOneSaveFallbackLogged(result.logger, {
-        journeyId: result.journeyId,
-        err: failure
+        journeyId: result.journeyId
       })
     })
   })

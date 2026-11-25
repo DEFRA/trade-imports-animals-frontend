@@ -718,7 +718,6 @@ describe('POST addresses — the same-as shortcut', () => {
 
     expect(result.after.consignor).toBeUndefined()
     expectRecoverableSaveFallback(result, {
-      err: failure,
       targetPartyId: 'consignor',
       sourcePartyId: 'placeOfOrigin'
     })

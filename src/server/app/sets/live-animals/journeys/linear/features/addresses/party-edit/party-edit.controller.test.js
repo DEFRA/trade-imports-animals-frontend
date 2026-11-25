@@ -266,8 +266,7 @@ describe('Edit address details — where the trader returns to', () => {
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.consignor).toEqual(STORED)
     expectOneSaveFallbackLogged(result.logger, {
-      journeyId: result.journeyId,
-      err: failure
+      journeyId: result.journeyId
     })
   })
 })

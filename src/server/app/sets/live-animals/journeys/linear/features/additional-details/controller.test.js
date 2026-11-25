@@ -75,8 +75,7 @@ describe('POST additional-details — backend unavailable', () => {
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.view.context.showUnweaned).toBe(true)
     expectOneSaveFallbackLogged(result.logger, {
-      journeyId: result.journeyId,
-      err: failure
+      journeyId: result.journeyId
     })
   })
 })
