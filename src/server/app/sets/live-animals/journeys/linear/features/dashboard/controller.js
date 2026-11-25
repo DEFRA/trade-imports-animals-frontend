@@ -39,6 +39,7 @@ import {
   normalizePageNumber,
   parseNotificationSort
 } from './notification-helper.js'
+import { FIRST_PAGE, pageAskedFor } from '../../../../../../shared/paging.js'
 import { toRow } from './view-model/row/index.js'
 import { sortOptions } from './view-model/sort-options.js'
 
@@ -70,8 +71,7 @@ export const renderDashboard = async (
   h,
   { recoverableError = false } = {}
 ) => {
-  const queryPage = Number.parseInt(request.query?.page, 10)
-  const requestedPage = normalizePageNumber(queryPage)
+  const requestedPage = pageAskedFor(request.query?.page) ?? FIRST_PAGE
   const sort = parseNotificationSort(request.query?.sort)
   const referenceNumber = parseReferenceNumber(request.query?.referenceNumber)
   const listed = await listKnownJourneys(request, {
