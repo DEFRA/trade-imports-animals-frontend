@@ -32,7 +32,6 @@ import * as transporters from './transport/transporters/transporters.controller.
 import * as transporterAdd from './transport/transporter-add/transporter-add.controller.js'
 import * as commercialTransporterDetails from './transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details/private-transporter-details.controller.js'
-import * as contact from './contact/controller.js'
 import { declarationRoutesFromReview } from './declaration/test-support.js'
 import * as commoditiesSearch from './commodities/search/search.controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
@@ -109,7 +108,6 @@ const scalarPages = [
     parityFixture
   ],
   ['private transporter', privateTransporterDetails, privateTransportFixture],
-  ['contact', contact, parityFixture],
   ['declaration', declarationFromReview, {}]
 ]
 

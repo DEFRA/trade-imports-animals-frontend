@@ -15,8 +15,7 @@ export const copy = {
     descriptionOfTheGoods: '2. Disgrifiad o’r nwyddau',
     transportAndArrival: '3. Cludiant a chyrraedd',
     documents: '4. Dogfennau wedi’u huwchlwytho',
-    addresses: '5. Cyfeiriadau',
-    contactAddress: '6. Cyfeiriad cyswllt'
+    addresses: '5. Cyfeiriadau'
   },
   cards: {
     originOfImport: 'Tarddiad y mewnforio',
@@ -25,8 +24,7 @@ export const copy = {
     additionalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',
     transportDetails: 'Manylion cludo',
-    consignmentAddresses: 'Cyfeiriadau’r llwyth',
-    contactAddress: 'Cyfeiriad cyswllt'
+    consignmentAddresses: 'Cyfeiriadau’r llwyth'
   },
   groups: {
     transitCountries: 'Gwledydd tramwy',
@@ -56,7 +54,6 @@ export const copy = {
     transportDocumentReference: 'Cyfeirnod dogfen cludo',
     name: 'Enw',
     address: 'Cyfeiriad',
-    contactAddress: 'Cyfeiriad cyswllt',
     country: 'Gwlad',
     approvalNumber: 'Rhif cymeradwyo',
     type: 'Math',
@@ -85,8 +82,7 @@ export const copy = {
       additionalDetails: 'manylion ychwanegol',
       arrivalDetails: 'manylion cyrraedd',
       transportDetails: 'manylion cludo',
-      consignmentAddresses: 'cyfeiriadau’r llwyth',
-      contactAddress: 'cyfeiriad cyswllt'
+      consignmentAddresses: 'cyfeiriadau’r llwyth'
     },
     document: (n) => `dogfen ${n}`,
     rows: {
@@ -123,7 +119,6 @@ export const copy = {
       arrivalDetails: 'Cwblhewch y manylion cyrraedd',
       transportDetails: 'Cwblhewch y manylion cludo',
       consignmentAddresses: 'Cwblhewch gyfeiriadau’r llwyth',
-      contactAddress: 'Cwblhewch y cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Cwblhewch y dogfennau'
     },
     species: {
@@ -139,9 +134,7 @@ export const copy = {
       consignee: 'Cywirwch fanylion y cyfeiriad ar gyfer y derbynnydd',
       importer: 'Cywirwch fanylion y cyfeiriad ar gyfer y mewnforiwr',
       placeOfDestination:
-        'Cywirwch fanylion y cyfeiriad ar gyfer y man cyrchfan',
-      contactAddress:
-        'Cywirwch fanylion y cyfeiriad cyswllt ar gyfer y llwyth hwn'
+        'Cywirwch fanylion y cyfeiriad ar gyfer y man cyrchfan'
     }
   }
 }

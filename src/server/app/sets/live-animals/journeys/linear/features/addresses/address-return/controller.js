@@ -125,7 +125,7 @@ const commitCopyOfAddress = (request, h, { journeyId, party, chosen }) =>
       )
   )
 
-const saveAddressAndLandOnReturnPageWithBanner = async (
+const saveAddressAndLandOnAddressesPageWithBanner = async (
   request,
   h,
   { journeyId, party, addressId, landing, chosen }
@@ -140,7 +140,7 @@ const saveAddressAndLandOnReturnPageWithBanner = async (
   }
   setAddedAddressBanner(h, chosen.name)
   logLanding(request, { journeyId, partyId: party.id, landing, addressId })
-  return h.redirect(pagePath(journeyId, party.returnSlug))
+  return h.redirect(pagePath(journeyId, addressesPage.slug))
 }
 
 const landOnPartyPageWithBanner = (
@@ -201,7 +201,7 @@ const get = async (request, h) => {
 
   const landed = { ...returned, party, landing, chosen }
   return landing === ADDRESS_LANDING.SELECT
-    ? saveAddressAndLandOnReturnPageWithBanner(request, h, landed)
+    ? saveAddressAndLandOnAddressesPageWithBanner(request, h, landed)
     : landOnPartyPageWithBanner(request, h, landed)
 }
 

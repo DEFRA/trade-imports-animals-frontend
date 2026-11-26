@@ -31,7 +31,7 @@ import { addressesPage } from './page.js'
 import { cphNumberPage } from '../cph-number/page.js'
 import { permanentAddressPage } from '../permanent-address/page.js'
 import { pagePath } from '../../../../../../shared/paths.js'
-import { consignmentContactSelectPage } from '../contact/page.js'
+import { notificationViewPage } from '../check-answers/page.js'
 import {
   BOS_TAURUS_ROW,
   FELIS_CATUS_ROW
@@ -560,7 +560,7 @@ describe('POST addresses — where Save and continue goes', () => {
     ],
     ['opened with no trail, as an address book return leaves it', [], []]
   ])(
-    'Should go on to the contact address with the trail extended by this page when continuing %s',
+    'Should go on to check your answers with the trail extended by this page when continuing %s',
     async (_start, startingFrom, trailBefore) => {
       const result = await driveHandler(postAddresses, {
         seed: requiredEarlierAnswers(),
@@ -568,10 +568,10 @@ describe('POST addresses — where Save and continue goes', () => {
       })
 
       expect(result.response.redirect).toBe(
-        withTrail(
-          pagePath(result.journeyId, consignmentContactSelectPage.slug),
-          [...trailBefore, addressesPage.slug]
-        )
+        withTrail(pagePath(result.journeyId, notificationViewPage.slug), [
+          ...trailBefore,
+          addressesPage.slug
+        ])
       )
     }
   )

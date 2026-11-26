@@ -25,3 +25,5 @@ blob-report/
 
 # sonar-scanner working directory (analysis report + architecture graphs)
 .scannerwork/
+
+workareas/

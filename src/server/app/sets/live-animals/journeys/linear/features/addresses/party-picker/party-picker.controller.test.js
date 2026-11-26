@@ -40,10 +40,14 @@ const DANISH_MEAT_ID = 'danish-meat-export-aps'
 const DANISH_MEAT_NAME = 'Danish Meat Export ApS'
 const JUTLAND_SWINE_ID = 'jutland-swine-aps'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
-const OTHER_ROLE_ONLY_ID = 'animal-and-plant-health-agency'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
 
 const listedFor = (role) => recordsHoldingRole(role).map((record) => record.id)
+
+const otherRoleOnlyIdFor = (party) =>
+  PARTIES.flatMap((other) => listedFor(other.addressBookRole)).find(
+    (id) => !listedFor(party.addressBookRole).includes(id)
+  )
 
 const handlerFor = (method, slug) =>
   partyPicker.routes.find(
@@ -315,7 +319,11 @@ describe('POST /consignors/select', () => {
 
   it('Should refuse an address the role does not offer on the page it was refused from', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', party: OTHER_ROLE_ONLY_ID, page: '2' }
+      payload: {
+        action: 'save',
+        party: otherRoleOnlyIdFor({ addressBookRole: 'CONSIGNOR' }),
+        page: '2'
+      }
     })
     const picker = pickerFrom(result)
 
@@ -520,7 +528,7 @@ describe('The five spokes share the one picker, each filtered to its own role', 
     for (const party of PARTIES) {
       store.clear()
       const result = await driveHandler(handlerFor('POST', party.slug), {
-        payload: { action: 'save', selected: OTHER_ROLE_ONLY_ID }
+        payload: { action: 'save', selected: otherRoleOnlyIdFor(party) }
       })
 
       expect(result.response.statusCode).toBe(400)
@@ -530,7 +538,7 @@ describe('The five spokes share the one picker, each filtered to its own role', 
         journeyId: result.journeyId,
         errorCodes: ['party'],
         partyId: party.id,
-        addressId: OTHER_ROLE_ONLY_ID
+        addressId: otherRoleOnlyIdFor(party)
       })
     }
   })
@@ -540,7 +548,10 @@ describe('The five spokes share the one picker, each filtered to its own role', 
       store.clear()
       const result = await driveHandler(handlerFor('GET', party.slug), {
         seed: {
-          [party.id]: { pickedFromId: OTHER_ROLE_ONLY_ID, name: 'Copied Name' }
+          [party.id]: {
+            pickedFromId: otherRoleOnlyIdFor(party),
+            name: 'Copied Name'
+          }
         }
       })
 

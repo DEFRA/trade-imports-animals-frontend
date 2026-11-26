@@ -41,7 +41,6 @@ import {
 } from './sections/import-reason.js'
 import {
   animalsCertifiedFor,
-  contactAddress,
   internalReferenceNumber
 } from './sections/misc.js'
 import {
@@ -81,7 +80,6 @@ export {
   speciesCommonName,
   consignee,
   consignor,
-  contactAddress,
   containsUnweanedAnimals,
   countryOfOrigin,
   countryOfOriginSubdivisionCode,
@@ -149,7 +147,6 @@ export const obligations = [
   transitedCountries,
   arrivalDateAtPort,
   portOfEntry,
-  contactAddress,
   internalReferenceNumber,
   animalsCertifiedFor,
   commodityLine,

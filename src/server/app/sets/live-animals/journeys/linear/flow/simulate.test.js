@@ -5,8 +5,6 @@ import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
 import { simulateJourney } from '../../../../../analysis/simulate.js'
 
-// The add spokes hang off the transporter list rather than sitting in the
-// journey, so no set of answers walks the simulator through them.
 const ADD_SPOKE_PAGES = ['transporter-add', 'private-transporter-details']
 
 describe('#simulateJourney', () => {
@@ -27,7 +25,7 @@ describe('#simulateJourney', () => {
       pages.indexOf('transporters')
     )
     expect(pages.indexOf('transporters')).toBeLessThan(
-      pages.indexOf('consignment-contact-select')
+      pages.indexOf('addresses')
     )
   })
 

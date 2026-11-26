@@ -148,7 +148,7 @@ test.describe('hub feature', () => {
     ).toBeVisible()
   })
 
-  test('the task list is headed "Notification task list" over the six numbered design sections in order, with nothing after them', async ({
+  test('the task list is headed "Notification task list" over the five numbered design sections in order, with nothing after them', async ({
     page
   }) => {
     await startNotification(page)
@@ -196,7 +196,6 @@ test.describe('hub feature', () => {
       copy.rows.arrivalDetails,
       copy.rows.transporter,
       copy.rows.addresses,
-      copy.rows.contact,
       copy.rows.documents
     ]
 

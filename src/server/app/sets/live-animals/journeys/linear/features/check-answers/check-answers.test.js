@@ -45,7 +45,6 @@ import {
   TRAIL_START,
   withTrail
 } from '../../../../../../shared/kit.js'
-import { consignmentContactSelectPage } from '../contact/page.js'
 import { copy as documentsCopy } from '../documents/copy/copy.en.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
@@ -228,7 +227,6 @@ const actionsOfRows = (sections) =>
 const NOT_APPLICABLE = 'Not applicable'
 const MISSING_HTML = '<span class="govuk-visually-hidden">Missing</span>'
 const CONSIGNOR_ERROR = 'Correct the address details for the consignor'
-const CONTACT_ERROR = 'Correct the contact address details for this consignment'
 const ORIGIN_OF_IMPORT_INCOMPLETE = 'Complete origin of import'
 const ADDRESSES_INCOMPLETE = 'Complete consignment addresses'
 const COMMODITY_DETAILS_INCOMPLETE = 'Complete commodity details'
@@ -285,8 +283,6 @@ const ADDITIONAL_DETAILS_CARD = 'Additional details'
 const ARRIVAL_DETAILS_CARD = 'Arrival details'
 const TRANSPORT_DETAILS_CARD = 'Transport details'
 const ADDRESSES_CARD = 'Consignment addresses'
-const CONTACT_ADDRESS_CARD = 'Contact address'
-const CONTACT_ADDRESS_KEY = 'Contact address'
 const DOCUMENT_1_CARD = 'Document 1'
 const DOCUMENT_2_CARD = 'Document 2'
 const TRANSPORT_AND_ARRIVAL_ANCHOR = 'transport-and-arrival'
@@ -393,8 +389,7 @@ const fullSeed = {
       addressLine1: ADDRESS_LINE_1,
       country: 'Switzerland'
     }
-  },
-  contactAddress: copyOf('animal-and-plant-health-agency')
+  }
 }
 
 const privateTransporterSeed = {
@@ -583,13 +578,11 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
       it('Should go Back to the last journey page when the trader pressed Save and continue on it', async () => {
         const { journeyId, backLink } = await backFor({
-          from: `${TRAIL_START.overview},${consignmentContactSelectPage.slug}`
+          from: `${TRAIL_START.overview},addresses`
         })
 
         expect(backLink).toBe(
-          withTrail(pagePath(journeyId, consignmentContactSelectPage.slug), [
-            TRAIL_START.overview
-          ])
+          withTrail(pagePath(journeyId, 'addresses'), [TRAIL_START.overview])
         )
       })
 
@@ -647,8 +640,7 @@ describe(`${SUITE} — section headings and cards`, () => {
       '2. Description of the goods',
       '3. Transport and arrival',
       '4. Uploaded documents',
-      '5. Addresses',
-      '6. Contact address'
+      '5. Addresses'
     ])
   })
 
@@ -680,8 +672,7 @@ describe(`${SUITE} — section headings and cards`, () => {
       ARRIVAL_DETAILS_CARD,
       TRANSPORT_DETAILS_CARD,
       DOCUMENT_1_CARD,
-      ADDRESSES_CARD,
-      CONTACT_ADDRESS_CARD
+      ADDRESSES_CARD
     ])
   })
 
@@ -707,8 +698,7 @@ describe(`${SUITE} — section headings and cards`, () => {
         [ARRIVAL_DETAILS_CARD, TRANSPORT_DETAILS_CARD]
       ],
       ['documents-section', [DOCUMENT_1_CARD]],
-      ['consignment-addresses', [ADDRESSES_CARD]],
-      ['contact-address-section', [CONTACT_ADDRESS_CARD]]
+      ['consignment-addresses', [ADDRESSES_CARD]]
     ])
   })
 
@@ -718,17 +708,13 @@ describe(`${SUITE} — section headings and cards`, () => {
     expect(keysOf(card.rows)[0]).toBe(MAIN_IMPORT_REASON)
   })
 
-  it('Should give the consignment addresses card and the contact address card one header action each, to their own pages', async () => {
+  it('Should give the consignment addresses card one header action, to the addresses page', async () => {
     const sections = await sectionsFor(fullSeed)
     const actionsOf = (title) => cardByTitle(sections, title).actions.items
 
     expect(actionsOf(ADDRESSES_CARD)).toHaveLength(1)
     expect(actionsOf(ADDRESSES_CARD)[0].href).toMatch(
       hrefEndingWithFromReview('addresses')
-    )
-    expect(actionsOf(CONTACT_ADDRESS_CARD)).toHaveLength(1)
-    expect(actionsOf(CONTACT_ADDRESS_CARD)[0].href).toMatch(
-      hrefEndingWithFromReview(consignmentContactSelectPage.slug)
     )
   })
 })
@@ -981,37 +967,16 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
     expect(htmlOf(card.rows, PLACE_OF_DESTINATION_KEY)).toBe(
       '<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom'
     )
-    const contact = cardByTitle(
-      await sectionsFor(fullSeed),
-      CONTACT_ADDRESS_CARD
-    )
-    expect(htmlOf(contact.rows, CONTACT_ADDRESS_KEY)).toBe(
-      '<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom'
-    )
   })
 
-  it('Should key the contact address row by name while the transporter row keeps the generic address label', async () => {
-    const sections = await sectionsFor(fullSeed)
-
-    expect(keysOf(cardByTitle(sections, CONTACT_ADDRESS_CARD).rows)).toEqual([
-      CONTACT_ADDRESS_KEY
-    ])
-    expect(
-      keysOf(cardByTitle(sections, TRANSPORT_DETAILS_CARD).rows)
-    ).toContain('Address')
-  })
-
-  it('Should give every card a Change action in its heading and no row any action but Change on the transit countries and Edit details on the contact address', async () => {
+  it('Should give every card a Change action in its heading and no row any action but Change on the transit countries', async () => {
     const sections = await sectionsFor(fullSeed)
 
     for (const card of cardsOf(sections)) {
       expect(card.actions.items, card.title).toHaveLength(1)
     }
     const actionsOnRows = actionsOfRows(sections)
-    expect(actionsOnRows.map((action) => action.text)).toEqual([
-      'Change',
-      'Edit details'
-    ])
+    expect(actionsOnRows.map((action) => action.text)).toEqual(['Change'])
   })
 
   it('Should point each card Change link at the page that collects its answers carrying the review on the trail', async () => {
@@ -1031,9 +996,6 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
     )
     expect(cardChangeHrefOf(sections, ADDRESSES_CARD)).toMatch(
       hrefEndingWithFromReview('addresses')
-    )
-    expect(cardChangeHrefOf(sections, CONTACT_ADDRESS_CARD)).toMatch(
-      hrefEndingWithFromReview(consignmentContactSelectPage.slug)
     )
   })
 
@@ -1911,54 +1873,12 @@ describe(`${SUITE} — copied party addresses`, () => {
     expect(rows.map((row) => row.actions)).toEqual(rows.map(() => undefined))
   })
 
-  it('Should give a draft contact address row exactly one action, Edit details, to its edit page returning to the review', async () => {
-    const { view, journeyId } = await driveHandler(getHandler, {
-      seed: fullSeed
-    })
-    const { rows } = cardByTitle(view.context.sections, CONTACT_ADDRESS_CARD)
-
-    expect(rows[0].actions).toEqual({
-      items: [
-        {
-          href: `${pagePath(journeyId, 'consignment/contact/edit')}?return=notification-view`,
-          text: 'Edit details',
-          visuallyHiddenText: 'contact address'
-        }
-      ]
-    })
-  })
-
-  it('Should give a submitted contact address row no action', async () => {
-    const { context } = await viewForStatus(SUBMITTED, fullSeed)
-    const { rows } = cardByTitle(context.sections, CONTACT_ADDRESS_CARD)
-
-    expect(Object.keys(rows[0]).sort()).toEqual(['key', 'value'])
-  })
-
-  it('Should give an unanswered contact address row no action', async () => {
-    const seed = { ...fullSeed }
-    delete seed.contactAddress
-    const { rows } = cardByTitle(await sectionsFor(seed), CONTACT_ADDRESS_CARD)
-
-    expect(Object.keys(rows[0]).sort()).toEqual(['key', 'value'])
-  })
-
   it('Should offer the Consignment addresses card only its heading Change link, to the addresses page carrying the review on the trail', async () => {
     const sections = await sectionsFor(fullSeed)
     const items = cardByTitle(sections, ADDRESSES_CARD).actions.items
 
     expect(items.map((item) => item.text)).toEqual(['Change'])
     expect(items[0].href).toMatch(hrefEndingWithFromReview('addresses'))
-  })
-
-  it('Should offer the Contact address card only its heading Change link, to the contact page carrying the review on the trail', async () => {
-    const sections = await sectionsFor(fullSeed)
-    const items = cardByTitle(sections, CONTACT_ADDRESS_CARD).actions.items
-
-    expect(items.map((item) => item.text)).toEqual(['Change'])
-    expect(items[0].href).toMatch(
-      hrefEndingWithFromReview(consignmentContactSelectPage.slug)
-    )
   })
 
   it('Should render the copy for every status, never consulting the address book', async () => {
@@ -1989,17 +1909,6 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     expect(summary.errorList.map((entry) => entry.text)).toEqual([
       CONSIGNOR_ERROR,
       'Correct the address details for the importer'
-    ])
-  })
-
-  it('Should name a contact address that breaks the rules', async () => {
-    const summary = await summaryFor({
-      ...fullSeed,
-      contactAddress: BROKEN_COPY
-    })
-
-    expect(summary.errorList.map((entry) => entry.text)).toEqual([
-      CONTACT_ERROR
     ])
   })
 
@@ -2034,21 +1943,6 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     expect(view.context.errorSummary.errorList[0].href).toBe(
       `${pagePath(journeyId, 'consignors/edit')}?return=notification-view`
     )
-  })
-
-  it('Should link a contact address in error to its edit page, not its card', async () => {
-    const { view, journeyId } = await driveHandler(getHandler, {
-      seed: { ...fullSeed, contactAddress: BROKEN_COPY }
-    })
-
-    expect(view.context.errorSummary.errorList).toEqual([
-      {
-        text: CONTACT_ERROR,
-        href: `${pagePath(journeyId, 'consignment/contact/edit')}?return=notification-view`
-      }
-    ])
-    const card = cardByTitle(view.context.sections, CONTACT_ADDRESS_CARD)
-    expect(card.rows[0].value.html).toContain(CONTACT_ERROR)
   })
 
   it('Should leave focus where it is when the page is merely visited', async () => {
@@ -2456,8 +2350,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
       'Complete additional details',
       ARRIVAL_DETAILS_INCOMPLETE,
       'Complete transport details',
-      'Complete consignment addresses',
-      'Complete contact address for this consignment'
+      'Complete consignment addresses'
     ])
   })
 
