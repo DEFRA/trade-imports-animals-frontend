@@ -63,7 +63,7 @@ const render = (
 const anyLineNeedingPermanentAddressIsCounted = (answers, evaluation) =>
   linesNeedingPermanentAddress(answers, evaluation).some(hasAnimalCount)
 
-const emptyStateApplying = (answers, evaluation) =>
+const emptyStateFor = (answers, evaluation) =>
   anyLineNeedingPermanentAddressIsCounted(answers, evaluation)
     ? {
         copy: copy.noAnimalsIdentified,
@@ -166,7 +166,7 @@ const get = async (request, h) => {
     return redirectSkipping(request, h, answers, evaluation, scope)
   }
   if (noAnimalIdentifiedOnALineThatNeedsOne(answers, evaluation)) {
-    const emptyState = emptyStateApplying(answers, evaluation)
+    const emptyState = emptyStateFor(answers, evaluation)
     logNoAddressableAnimal(request, answers, evaluation, emptyState, 'shown')
     return render(request, h, journey, [], {
       emptyState: emptyStateLinkingTo(request, emptyState)
@@ -188,7 +188,7 @@ const redirectPastEmptyState = (request, h, answers, evaluation, scope) => {
     request,
     answers,
     evaluation,
-    emptyStateApplying(answers, evaluation),
+    emptyStateFor(answers, evaluation),
     'continuedPast'
   )
   return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
