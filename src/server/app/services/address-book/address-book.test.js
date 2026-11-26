@@ -12,7 +12,10 @@ const PHONE = '01632 960000'
 const okResponse = (body) => ({ ok: true, status: 200, json: async () => body })
 
 const stubFetch = (answerAddressBook) => {
-  const referenceDataCountries = [{ code: 'BE', name: 'Belgium' }]
+  const referenceDataCountries = [
+    { code: 'BE', name: 'Belgium' },
+    { code: 'FR', name: 'France' }
+  ]
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url, init) =>
@@ -174,6 +177,82 @@ describe('#addresses against the real address book', () => {
     const { searchParams } = new URL(fetched.mock.calls[0][0])
     expect(searchParams.get('q')).toBe('nordvik')
     expect(searchParams.has('role')).toBe(false)
+  })
+
+  describe('searching by country name', () => {
+    const countryCodesSentTo = (fetched) =>
+      new URL(fetched.mock.calls[0][0]).searchParams.getAll('countryCode')
+
+    test('Should ask for the code of the country named, whatever the case or surrounding spaces, and still send the term as the text search', async () => {
+      const fetched = vi.fn(servePagedAddressBook(3))
+      switchToRealMode()
+      stubFetch(fetched)
+
+      const { addresses } = await addressBook()
+      await addresses(ORG, { query: '  fRaNce ' })
+
+      const { searchParams } = new URL(fetched.mock.calls[0][0])
+      expect(searchParams.getAll('countryCode')).toEqual(['FR'])
+      expect(searchParams.get('q')).toBe('  fRaNce ')
+    })
+
+    test('Should ask for the code of a country whose name contains part of the term and not the other countries', async () => {
+      const fetched = vi.fn(servePagedAddressBook(3))
+      switchToRealMode()
+      stubFetch(fetched)
+
+      const { addresses } = await addressBook()
+      await addresses(ORG, { query: 'elgi' })
+
+      expect(countryCodesSentTo(fetched)).toEqual(['BE'])
+    })
+
+    test('Should ask for GB when the term is United Kingdom', async () => {
+      const fetched = vi.fn(servePagedAddressBook(3))
+      switchToRealMode()
+      stubFetch(fetched)
+
+      const { addresses } = await addressBook()
+      await addresses(ORG, { query: 'United Kingdom' })
+
+      expect(countryCodesSentTo(fetched)).toEqual(['GB'])
+    })
+
+    test('Should send the same country codes on every page of a multi-page read', async () => {
+      const fetched = vi.fn(servePagedAddressBook(250))
+      switchToRealMode()
+      stubFetch(fetched)
+
+      const { addresses } = await addressBook()
+      await addresses(ORG, { query: 'France' })
+
+      const codesPerPage = fetched.mock.calls.map(([url]) =>
+        new URL(url).searchParams.getAll('countryCode')
+      )
+      expect(codesPerPage).toEqual([['FR'], ['FR'], ['FR']])
+    })
+
+    test('Should send no country code for a term no country name contains', async () => {
+      const fetched = vi.fn(servePagedAddressBook(3))
+      switchToRealMode()
+      stubFetch(fetched)
+
+      const { addresses } = await addressBook()
+      await addresses(ORG, { query: 'nordvik' })
+
+      expect(countryCodesSentTo(fetched)).toEqual([])
+    })
+
+    test('Should send no country code when there is no search term', async () => {
+      const fetched = vi.fn(servePagedAddressBook(3))
+      switchToRealMode()
+      stubFetch(fetched)
+
+      const { addresses } = await addressBook()
+      await addresses(ORG)
+
+      expect(countryCodesSentTo(fetched)).toEqual([])
+    })
   })
 
   test('Should raise a failure rather than serving an empty book', async () => {
