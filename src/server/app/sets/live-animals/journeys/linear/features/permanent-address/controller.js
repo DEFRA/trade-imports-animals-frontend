@@ -7,8 +7,11 @@ import {
 } from '../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import { isBlank } from '../../../../../../lib/answered.js'
-import { commodityCodesOf, linesOf } from '../commodities/lines.js'
+import {
+  commodityCodesOf,
+  hasAnimalCount,
+  linesOf
+} from '../commodities/lines.js'
 import {
   animalIdentificationPage,
   consignmentDetailsPage
@@ -58,9 +61,7 @@ const render = (
   })
 
 const anyLineNeedingPermanentAddressIsCounted = (answers, evaluation) =>
-  linesNeedingPermanentAddress(answers, evaluation).some(
-    ({ entry }) => !isBlank(entry.numberOfAnimalsQuantity)
-  )
+  linesNeedingPermanentAddress(answers, evaluation).some(hasAnimalCount)
 
 const emptyStateApplying = (answers, evaluation) =>
   anyLineNeedingPermanentAddressIsCounted(answers, evaluation)
