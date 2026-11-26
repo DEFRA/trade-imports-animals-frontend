@@ -138,6 +138,21 @@ export const addressBookCountries = async () => {
   ]
 }
 
+/**
+ * @param {string} term
+ * @returns {Promise<string[]>} the address book country codes whose name
+ * contains the term, ignoring case and surrounding spaces; none for a blank term.
+ */
+export const addressBookCountryCodesMatching = async (term) => {
+  const wanted = term.trim().toLowerCase()
+  if (!wanted) {
+    return []
+  }
+  return (await addressBookCountries())
+    .filter(({ name }) => name.toLowerCase().includes(wanted))
+    .map(({ code }) => code)
+}
+
 /** Falls back to the code. */
 export const addressBookCountryName = async (code) =>
   (await addressBookCountries()).find((option) => option.code === code)?.name ??
