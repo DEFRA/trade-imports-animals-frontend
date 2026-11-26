@@ -203,6 +203,23 @@ describe('permanent-address — a line that needs one with no animal counted yet
       NO_ANIMAL_COUNTED_CONTINUED_PAST_LOG
     )
   })
+
+  it('Should show the add-the-number-of-animals message when the only counted line is one that needs no permanent address', async () => {
+    const seed = {
+      countryOfOrigin: 'FR',
+      commodityLines: [
+        lineOf(BOS_TAURUS_ROW, { numberOfAnimalsQuantity: 3 }),
+        lineOf(FELIS_CATUS_ROW)
+      ]
+    }
+
+    const result = await driveHandler(get, { seed })
+
+    expect(result.view.context.emptyState).toEqual({
+      copy: copy.noAnimalsCounted,
+      href: pagePath(result.journeyId, consignmentDetailsPage.slug)
+    })
+  })
 })
 
 describe('permanent-address — a counted line that needs one with no animal identified yet', () => {
@@ -234,6 +251,23 @@ describe('permanent-address — a counted line that needs one with no animal ide
       result,
       NO_ANIMAL_IDENTIFIED_CONTINUED_PAST_LOG
     )
+  })
+
+  it('Should show the identify-an-animal message when one line that needs a permanent address is counted and another is not', async () => {
+    const seed = {
+      countryOfOrigin: 'FR',
+      commodityLines: [
+        lineOf(FELIS_CATUS_ROW, { numberOfAnimalsQuantity: 2 }),
+        lineOf(MUSTELA_PUTORIUS_FURO_ROW)
+      ]
+    }
+
+    const result = await driveHandler(get, { seed })
+
+    expect(result.view.context.emptyState).toEqual({
+      copy: copy.noAnimalsIdentified,
+      href: pagePath(result.journeyId, animalIdentificationPage.slug)
+    })
   })
 })
 
