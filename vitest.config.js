@@ -11,7 +11,8 @@ export default defineConfig({
       // way the Playwright suite does. Tests that exercise real mode set the flag
       // themselves and restore it.
       STUB_MODE: 'true',
-      LOG_FORMAT: 'ecs'
+      LOG_FORMAT: 'ecs',
+      AWS_EMF_ENVIRONMENT: 'Local'
     },
     // Playwright FIT specs are run by Playwright, not vitest.
     exclude: [
