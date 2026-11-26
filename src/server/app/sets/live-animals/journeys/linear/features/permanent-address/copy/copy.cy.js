@@ -33,9 +33,14 @@ export const copy = {
     placeOfDestinationUnknown: 'Ychwanegwch fan cyrchfan cyn i chi barhau',
     forAnimal: (message, animal) => `${message} ar gyfer ${animal}`
   },
-  noAnimalsIdentified: {
+  noAnimalsCounted: {
     before: 'Ychwanegwch nifer yr anifeiliaid ar ',
-    linkText: 'fanylion y gyflwyniad',
+    linkText: 'fanylion y llwyth',
+    after: ' cyn i chi barhau.'
+  },
+  noAnimalsIdentified: {
+    before: 'Nodwch anifail ar ',
+    linkText: 'fanylion adnabod',
     after: ' cyn i chi barhau.'
   }
 }

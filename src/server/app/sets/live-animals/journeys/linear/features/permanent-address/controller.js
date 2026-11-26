@@ -7,8 +7,15 @@ import {
 } from '../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import { commodityCodesOf, linesOf } from '../commodities/lines.js'
-import { consignmentDetailsPage } from '../commodities/page.js'
+import {
+  commodityCodesOf,
+  hasAnimalCount,
+  linesOf
+} from '../commodities/lines.js'
+import {
+  animalIdentificationPage,
+  consignmentDetailsPage
+} from '../commodities/page.js'
 import { toDisplayParty } from '../addresses/frozen-parties.js'
 import { permanentAddressPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
@@ -36,7 +43,7 @@ const render = (
   h,
   journey,
   cards,
-  { recoverableError = false } = {}
+  { recoverableError = false, emptyState = null } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -49,12 +56,48 @@ const render = (
     }),
     copy,
     cards,
-    noAnimalsIdentifiedHref: kit.carryTrail(
-      request,
-      pagePath(request.params.journeyId, consignmentDetailsPage.slug)
-    ),
+    emptyState,
     errorSummary: kit.errorSummary(summaryTextFor(cards, copy))
   })
+
+const anyLineNeedingPermanentAddressIsCounted = (answers, evaluation) =>
+  linesNeedingPermanentAddress(answers, evaluation).some(hasAnimalCount)
+
+const emptyStateFor = (answers, evaluation) =>
+  anyLineNeedingPermanentAddressIsCounted(answers, evaluation)
+    ? {
+        copy: copy.noAnimalsIdentified,
+        linkedPage: animalIdentificationPage,
+        reason: 'permanent-address-no-animal-identified',
+        messages: {
+          shown:
+            'Permanent address shown with no animal identified on a line that needs one',
+          continuedPast:
+            'Permanent address continued past with no animal identified on a line that needs one'
+        }
+      }
+    : {
+        copy: copy.noAnimalsCounted,
+        linkedPage: consignmentDetailsPage,
+        reason: 'permanent-address-no-animal-counted',
+        messages: {
+          shown:
+            'Permanent address shown with no animal counted on a line that needs one',
+          continuedPast:
+            'Permanent address continued past with no animal counted on a line that needs one'
+        }
+      }
+
+const emptyStateLinkingTo = (
+  request,
+  { copy: emptyStateCopy, linkedPage }
+) => ({
+  copy: emptyStateCopy,
+  href: kit.carryTrail(
+    request,
+    pagePath(request.params.journeyId, linkedPage.slug)
+  )
+})
 
 const renderCards = (answers, evaluation, placeOfDestination) =>
   buildCards(answers, evaluation, placeOfDestination, copy)
@@ -99,16 +142,22 @@ const redirectSkipping = (request, h, answers, evaluation, scope) => {
   return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
 }
 
-const logNoAnimalsIdentified = (request, answers, evaluation) =>
+const logNoAddressableAnimal = (
+  request,
+  answers,
+  evaluation,
+  emptyState,
+  outcome
+) =>
   request.logger.info(
     {
       journeyId: request.params.journeyId,
-      reason: 'permanent-address-no-animal-identified',
+      reason: emptyState.reason,
       commodityCodes: commodityCodesOf(
         linesNeedingPermanentAddress(answers, evaluation)
       )
     },
-    'Permanent address shown with no animal identified on a line that needs one'
+    emptyState.messages[outcome]
   )
 
 const get = async (request, h) => {
@@ -117,8 +166,11 @@ const get = async (request, h) => {
     return redirectSkipping(request, h, answers, evaluation, scope)
   }
   if (noAnimalIdentifiedOnALineThatNeedsOne(answers, evaluation)) {
-    logNoAnimalsIdentified(request, answers, evaluation)
-    return render(request, h, journey, [])
+    const emptyState = emptyStateFor(answers, evaluation)
+    logNoAddressableAnimal(request, answers, evaluation, emptyState, 'shown')
+    return render(request, h, journey, [], {
+      emptyState: emptyStateLinkingTo(request, emptyState)
+    })
   }
   const placeOfDestinationParty = await toDisplayParty(
     answers.placeOfDestination
@@ -131,14 +183,34 @@ const get = async (request, h) => {
   )
 }
 
+const redirectPastEmptyState = (request, h, answers, evaluation, scope) => {
+  logNoAddressableAnimal(
+    request,
+    answers,
+    evaluation,
+    emptyStateFor(answers, evaluation),
+    'continuedPast'
+  )
+  return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
+}
+
+const logPlaceOfDestinationUnknown = (request, placeOfDestinationErrors) => {
+  if (Object.keys(placeOfDestinationErrors).length > 0) {
+    kit.logRefusal(request, {
+      level: 'warn',
+      reason: 'permanent-address-place-of-destination-unknown',
+      fieldErrors: placeOfDestinationErrors
+    })
+  }
+}
+
 const post = async (request, h) => {
   const { journey, answers, evaluation, scope } = await state.get(request, h)
   if (noLineNeedsAPermanentAddress(answers, evaluation)) {
     return redirectSkipping(request, h, answers, evaluation, scope)
   }
   if (noAnimalIdentifiedOnALineThatNeedsOne(answers, evaluation)) {
-    logNoAnimalsIdentified(request, answers, evaluation)
-    return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
+    return redirectPastEmptyState(request, h, answers, evaluation, scope)
   }
 
   const payload = request.payload ?? {}
@@ -159,13 +231,7 @@ const post = async (request, h) => {
   )
 
   if (Object.keys(fieldErrors).length > 0) {
-    if (Object.keys(placeOfDestinationErrors).length > 0) {
-      kit.logRefusal(request, {
-        level: 'warn',
-        reason: 'permanent-address-place-of-destination-unknown',
-        fieldErrors: placeOfDestinationErrors
-      })
-    }
+    logPlaceOfDestinationUnknown(request, placeOfDestinationErrors)
     return render(
       request,
       h,

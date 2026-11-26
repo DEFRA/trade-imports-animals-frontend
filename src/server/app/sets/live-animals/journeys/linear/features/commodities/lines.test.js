@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { hasAnimalCount } from './lines.js'
 
 describe('#hasAnimalCount', () => {
-  it.each([undefined, null, ''])(
+  it.each([undefined, null, '', '  '])(
     'Should not count a line whose animal count is %j',
     (numberOfAnimalsQuantity) => {
       expect(hasAnimalCount({ entry: { numberOfAnimalsQuantity } })).toBe(false)

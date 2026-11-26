@@ -70,7 +70,7 @@
         </section>
       {% endfor %}
     {% else %}
-      <p class="govuk-body">{{ copy.noAnimalsIdentified.before }}<a class="govuk-link" href="{{ noAnimalsIdentifiedHref }}">{{ copy.noAnimalsIdentified.linkText }}</a>{{ copy.noAnimalsIdentified.after }}</p>
+      <p class="govuk-body">{{ emptyState.copy.before }}<a class="govuk-link" href="{{ emptyState.href }}">{{ emptyState.copy.linkText }}</a>{{ emptyState.copy.after }}</p>
     {% endif %}
 
     {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, showReturnControls: false }) }}

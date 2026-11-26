@@ -33,9 +33,14 @@ export const copy = {
       'Add a place of destination before you can continue',
     forAnimal: (message, animal) => `${message} for ${animal}`
   },
-  noAnimalsIdentified: {
+  noAnimalsCounted: {
     before: 'Add the number of animals on ',
     linkText: 'consignment details',
+    after: ' before you can continue.'
+  },
+  noAnimalsIdentified: {
+    before: 'Identify an animal on ',
+    linkText: 'identification details',
     after: ' before you can continue.'
   }
 }

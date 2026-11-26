@@ -98,11 +98,19 @@ describe('permanent-address copy module', () => {
     expect(copyCy.errors.placeOfDestinationUnknown.length).toBeGreaterThan(0)
   })
 
-  it('Should show the no-animals-identified message in three parts naming consignment details, in English, with non-empty Welsh counterparts', () => {
-    expect(copy.noAnimalsIdentified.before).toBe(
-      'Add the number of animals on '
-    )
-    expect(copy.noAnimalsIdentified.linkText).toBe('consignment details')
+  it('Should show the no-animals-counted message in three parts naming consignment details, in English, with non-empty Welsh counterparts', () => {
+    expect(copy.noAnimalsCounted.before).toBe('Add the number of animals on ')
+    expect(copy.noAnimalsCounted.linkText).toBe('consignment details')
+    expect(copy.noAnimalsCounted.after).toBe(' before you can continue.')
+    for (const part of ['before', 'linkText', 'after']) {
+      expect(typeof copyCy.noAnimalsCounted[part]).toBe('string')
+      expect(copyCy.noAnimalsCounted[part].length).toBeGreaterThan(0)
+    }
+  })
+
+  it('Should show the no-animals-identified message in three parts naming identification details, in English, with non-empty Welsh counterparts', () => {
+    expect(copy.noAnimalsIdentified.before).toBe('Identify an animal on ')
+    expect(copy.noAnimalsIdentified.linkText).toBe('identification details')
     expect(copy.noAnimalsIdentified.after).toBe(' before you can continue.')
     for (const part of ['before', 'linkText', 'after']) {
       expect(typeof copyCy.noAnimalsIdentified[part]).toBe('string')
