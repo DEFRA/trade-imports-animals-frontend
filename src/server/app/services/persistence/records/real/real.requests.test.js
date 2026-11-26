@@ -17,6 +17,7 @@ import { isRecoverableBackendError } from '../errors.js'
 import { withOrganisationId } from '../../../../../common/helpers/organisation-id.js'
 import {
   ECS_PLATFORM_FIELDS,
+  backendRefusalLine,
   recordEcsLogLines
 } from '../../../../../common/test-helpers/ecs-log-lines.js'
 import { mapStatus, records } from './index.js'
@@ -64,19 +65,11 @@ const canonical = ({
 
 const jsonOf = (request) => request.clone().json()
 
-const REFUSAL_LOG_MESSAGE = 'Backend refused request'
-
-const refusalLine = ({ error, ...fields }) => ({
-  ...ECS_PLATFORM_FIELDS,
-  'log.level': 'warn',
-  message: REFUSAL_LOG_MESSAGE,
-  ...fields,
-  error: {
-    type: 'BackendRequestError',
-    stack_trace: expect.stringMatching(/^BackendRequestError: /),
-    ...error
-  }
-})
+const backendAnswersServerError = () =>
+  fetchMocker.mockResponse('Server Error', {
+    status: 500,
+    statusText: 'Internal Server Error'
+  })
 
 describe('real records adapter — canonical fulfilment boundary', () => {
   const ecsLog = recordEcsLogLines()
@@ -276,10 +269,7 @@ describe('real records adapter — fulfilment writes', () => {
   })
 
   it('Should throw when the notification PUT returns a non-ok status', async () => {
-    fetchMocker.mockResponse('Server Error', {
-      status: 500,
-      statusText: 'Internal Server Error'
-    })
+    backendAnswersServerError()
 
     await expect(
       asDefaultOrganisation(() =>
@@ -338,8 +328,6 @@ describe('real records adapter — fulfilment writes', () => {
 })
 
 describe('real records adapter — lifecycle and list', () => {
-  const ecsLog = recordEcsLogLines()
-
   beforeEach(() => {
     fetchMocker.resetMocks()
   })
@@ -424,29 +412,6 @@ describe('real records adapter — lifecycle and list', () => {
     )
   })
 
-  it('Should reject a 409 submit whose body is not JSON without a code, and log one warn line with its error and the journey as event.reference', async () => {
-    fetchMocker.mockResponse('Conflict', {
-      status: 409,
-      statusText: 'Conflict'
-    })
-
-    const surfaced = await asDefaultOrganisation(() =>
-      records.submit(journeyId, actor, 4)
-    ).catch((error) => error)
-
-    expect(surfaced).toMatchObject({ name: 'BackendRequestError', status: 409 })
-    expect(surfaced.code).toBeUndefined()
-    expect(ecsLog.linesAtLevel('warn')).toEqual([
-      refusalLine({
-        event: { reference: journeyId },
-        error: {
-          message:
-            'animals-backend refused to submit notification: 409 Conflict'
-        }
-      })
-    ])
-  })
-
   it('Should copy with the source concurrencyToken as a query parameter (WYSIWYG guarantee)', async () => {
     const copiedJourneyId = 'GBN-AG-26-COPIED'
     fetchMocker.mockResponse(
@@ -492,10 +457,7 @@ describe('real records adapter — lifecycle and list', () => {
   })
 
   it('Should throw when the notifications list request returns a non-ok status', async () => {
-    fetchMocker.mockResponse('Server Error', {
-      status: 500,
-      statusText: 'Internal Server Error'
-    })
+    backendAnswersServerError()
 
     await expect(
       asDefaultOrganisation(() =>
@@ -575,7 +537,7 @@ describe('real records adapter — backend refusals', () => {
     ).catch((error) => error)
 
     expect(ecsLog.linesAtLevel('warn')).toEqual([
-      refusalLine({
+      backendRefusalLine({
         event: { reference: journeyId },
         error: {
           message:
@@ -596,11 +558,47 @@ describe('real records adapter — backend refusals', () => {
     )
 
     expect(ecsLog.linesAtLevel('warn')).toEqual([
-      refusalLine({
+      backendRefusalLine({
         event: { reference: journeyId },
         error: {
           message: 'animals-backend refused to copy notification: 409 Conflict',
           code: 'STALE_CONCURRENCY_TOKEN'
+        }
+      })
+    ])
+  })
+
+  it('Should reject a 409 submit whose body is not JSON without a code or cause, and log the unread refusal code then the refusal, each with its error and the journey as event.reference', async () => {
+    fetchMocker.mockResponse('Conflict', {
+      status: 409,
+      statusText: 'Conflict'
+    })
+
+    const surfaced = await asDefaultOrganisation(() =>
+      records.submit(journeyId, actor, 4)
+    ).catch((error) => error)
+
+    expect(surfaced).toMatchObject({ name: 'BackendRequestError', status: 409 })
+    expect(surfaced.code).toBeUndefined()
+    expect(surfaced.cause).toBeUndefined()
+    expect(ecsLog.linesAtLevel('warn')).toEqual([
+      {
+        ...ECS_PLATFORM_FIELDS,
+        'log.level': 'warn',
+        message:
+          'Backend refusal code could not be read: animals-backend refused to submit notification: 409 Conflict',
+        event: { reference: journeyId },
+        error: {
+          type: 'SyntaxError',
+          message: `Unexpected token 'C', "Conflict" is not valid JSON`,
+          stack_trace: expect.stringMatching(/^SyntaxError: /)
+        }
+      },
+      backendRefusalLine({
+        event: { reference: journeyId },
+        error: {
+          message:
+            'animals-backend refused to submit notification: 409 Conflict'
         }
       })
     ])
@@ -617,10 +615,47 @@ describe('real records adapter — backend refusals', () => {
     )
 
     expect(ecsLog.linesAtLevel('warn')).toEqual([
-      refusalLine({
+      backendRefusalLine({
         error: {
           message:
             'animals-backend refused to create notification: 400 Bad Request'
+        }
+      })
+    ])
+  })
+
+  it('Should log one warn line with the reference as event.reference when the backend refuses a list filtered by reference', async () => {
+    backendAnswersServerError()
+
+    await expect(
+      asDefaultOrganisation(() =>
+        records.list({ page: 1, referenceNumber: journeyId })
+      )
+    ).rejects.toThrow()
+
+    expect(ecsLog.linesBesideExternalCalls()).toEqual([
+      backendRefusalLine({
+        event: { reference: journeyId },
+        error: {
+          message:
+            'animals-backend refused to list notifications: 500 Internal Server Error'
+        }
+      })
+    ])
+  })
+
+  it('Should log one warn line with no event.reference when the backend refuses an unfiltered list', async () => {
+    backendAnswersServerError()
+
+    await expect(
+      asDefaultOrganisation(() => records.list({ page: 1 }))
+    ).rejects.toThrow()
+
+    expect(ecsLog.linesBesideExternalCalls()).toEqual([
+      backendRefusalLine({
+        error: {
+          message:
+            'animals-backend refused to list notifications: 500 Internal Server Error'
         }
       })
     ])

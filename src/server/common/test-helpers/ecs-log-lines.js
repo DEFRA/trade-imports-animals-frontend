@@ -17,6 +17,34 @@ export const ECS_PLATFORM_FIELDS = {
 }
 
 /**
+ * The warn line written when the backend refuses a request: its message names
+ * each of `namedIds` as `<name> <id>`, and its error is a `BackendRequestError`
+ * whose fields `error` sets. Any other field, such as `event`, is added as given.
+ *
+ * @param {object} line
+ * @param {Record<string, string>} [line.namedIds] the ids the message names
+ * @param {object} line.error the error fields, such as `message` and `code`
+ * @returns {object} the expected line
+ */
+export const backendRefusalLine = ({ namedIds = {}, error, ...fields }) => {
+  const named = Object.entries(namedIds).map(([name, id]) => `${name} ${id}`)
+  return {
+    ...ECS_PLATFORM_FIELDS,
+    'log.level': 'warn',
+    message:
+      named.length === 0
+        ? 'Backend refused request'
+        : `Backend refused request for ${named.join(', ')}`,
+    ...fields,
+    error: {
+      type: 'BackendRequestError',
+      stack_trace: expect.stringMatching(/^BackendRequestError: /),
+      ...error
+    }
+  }
+}
+
+/**
  * Keeps, parsed, every line the module logger and its child loggers write at
  * the configured log level during each test of the enclosing `describe`, in
  * place of the logger's output. Needs `LOG_FORMAT` `ecs`. Puts back the logger's

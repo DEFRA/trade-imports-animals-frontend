@@ -243,8 +243,11 @@ the page. The
 of a line that is not there is the example of a refusal that passes its reason.
 
 `kit.recoverableSave()` takes the request and logs every save fallback once at
-warn, with `journeyId` and the caught error as `err`, plus any ids the page
-passes it. `recoverableSave` writes that line; a page's fallback callback only
+info, with `journeyId` plus any ids the page passes it. A journey backend
+refusal is logged with its `err` and the journey as `event.reference` where it
+is raised, so the fallback line leaves `err` out; any other caught error goes
+on the fallback line as `err`. The 5xx error page's `Request failed` line
+follows the same rule, so one refused call writes its stack once. `recoverableSave` writes that line; a page's fallback callback only
 builds the response.
 
 A refusal answered by a redirect logs its own named line with the journey id

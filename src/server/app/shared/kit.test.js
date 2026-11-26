@@ -12,9 +12,13 @@ import createFetchMock from 'vitest-fetch-mock'
 import { AMEND, DRAFT, makeScope } from '../engine/index.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { records } from '../services/persistence/records/real/index.js'
+import { BackendRequestError } from '../services/persistence/records/errors.js'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { withOrganisationId } from '../../common/helpers/organisation-id.js'
-import { recordEcsLogLines } from '../../common/test-helpers/ecs-log-lines.js'
+import {
+  backendRefusalLine,
+  recordEcsLogLines
+} from '../../common/test-helpers/ecs-log-lines.js'
 import { SET_ID } from '../sets/live-animals/set.js'
 import { dispatchPages } from '../sets/live-animals/journeys/linear/features/index.js'
 import { buildDispatch } from '../flow/dispatch.js'
@@ -295,8 +299,34 @@ describe('#recoverableSave', () => {
     })
   })
 
+  it('Should log the fallback once at info with the journey id and the error, then answer with the fallback, when the recoverable refusal was not logged where it was raised', async () => {
+    const request = journeyRequest('journey-1')
+    const failure = new BackendRequestError(
+      { dependency: 'address-book', operation: 'list-addresses' },
+      { status: 503, statusText: 'Service Unavailable' }
+    )
+
+    const outcome = await recoverableSave(
+      request,
+      async () => {
+        throw failure
+      },
+      fallback
+    )
+
+    expect(outcome).toEqual({ failure: fallbackResponse })
+    expectOneLogged(request.logger, {
+      level: 'info',
+      message: SAVE_FALLBACK_LOG_MESSAGE,
+      fields: { journeyId: 'journey-1', err: failure }
+    })
+  })
+
   it('Should write one warn line beside the external-call line, the backend refusal, and the fallback at info with no error, when the backend refuses a save', async () => {
-    fetchMocker.mockResponse('Unavailable', { status: 503 })
+    fetchMocker.mockResponse('Unavailable', {
+      status: 503,
+      statusText: 'Service Unavailable'
+    })
     const request = {
       params: { journeyId: 'journey-1' },
       route: { path: '/notifications/{journeyId}/origin' },
@@ -329,12 +359,12 @@ describe('#recoverableSave', () => {
         .linesBesideExternalCalls()
         .filter((line) => line['log.level'] === 'warn')
     ).toEqual([
-      expect.objectContaining({
-        message: 'Backend refused request',
+      backendRefusalLine({
         event: { reference: 'journey-1' },
-        error: expect.objectContaining({
-          message: expect.stringMatching(/: 503 /)
-        })
+        error: {
+          message:
+            'animals-backend refused to replace notification: 503 Service Unavailable'
+        }
       })
     ])
     expect(ecsLog.linesWithMessage(SAVE_FALLBACK_LOG_MESSAGE)).toEqual([

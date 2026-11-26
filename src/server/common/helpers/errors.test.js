@@ -5,6 +5,10 @@ import { catchAll } from './errors.js'
 import { createServer } from '../../server.js'
 import { statusCodes } from '../constants/status-codes.js'
 import { mockOidcConfig } from '../test-helpers/mock-oidc-config.js'
+import {
+  BackendRequestError,
+  markRefusalLogged
+} from '../../app/services/persistence/records/errors.js'
 
 vi.mock('../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -89,6 +93,7 @@ describe('#errors', () => {
 describe('#catchAll', () => {
   const mockErrorLogger = vi.fn()
   const errorPage = 'shared/error'
+  const REQUEST_FAILED_MESSAGE = 'Request failed'
   const mockRequest = (statusCode) => ({
     response: {
       isBoom: true,
@@ -188,7 +193,7 @@ describe('#catchAll', () => {
         err: request.response,
         statusCode: statusCodes.internalServerError
       }),
-      'Request failed'
+      REQUEST_FAILED_MESSAGE
     )
     expect(mockToolkitView).toHaveBeenCalledWith(
       errorPage,
@@ -212,7 +217,25 @@ describe('#catchAll', () => {
         statusCode: statusCodes.serviceUnavailable,
         dataset: 'countries'
       },
-      'Request failed'
+      REQUEST_FAILED_MESSAGE
+    )
+  })
+
+  test('Should log a backend refusal logged where it was raised with its status and no error', () => {
+    const response = Boom.boomify(
+      markRefusalLogged(
+        new BackendRequestError(
+          { dependency: 'animals-backend', operation: 'submit-notification' },
+          { status: 503, statusText: 'Service Unavailable' }
+        )
+      )
+    )
+
+    catchAll({ response, logger: { error: mockErrorLogger } }, mockToolkit)
+
+    expect(mockErrorLogger).toHaveBeenCalledExactlyOnceWith(
+      { statusCode: statusCodes.internalServerError },
+      REQUEST_FAILED_MESSAGE
     )
   })
 

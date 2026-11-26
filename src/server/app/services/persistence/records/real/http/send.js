@@ -1,6 +1,7 @@
-import { failed } from './failed.js'
 import { headers } from './headers.js'
+import { refusalErrorFor } from './refusal-error.js'
 import { backendFetch } from '../../../../../../common/helpers/backend-client/backend-fetch.js'
+import { markRefusalLogged } from '../../errors.js'
 import { journeyReferenceFields } from '../journey-reference-fields.js'
 import { logger } from '../logger.js'
 
@@ -26,12 +27,12 @@ export const refuseUnlessOk = async (
   { journeyId, ...otherIds } = {}
 ) => {
   if (!response.ok) {
-    const error = await failed(operation, response)
+    const error = await refusalErrorFor(operation, response, { journeyId })
     logger.warn(
       { err: error, ...journeyReferenceFields(journeyId) },
       refusalMessage(otherIds)
     )
-    throw error
+    throw markRefusalLogged(error)
   }
   return response
 }

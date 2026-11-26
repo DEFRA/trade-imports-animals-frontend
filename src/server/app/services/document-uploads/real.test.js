@@ -3,7 +3,7 @@ import createFetchMock from 'vitest-fetch-mock'
 
 import { withOrganisationId } from '../../../common/helpers/organisation-id.js'
 import {
-  ECS_PLATFORM_FIELDS,
+  backendRefusalLine,
   recordEcsLogLines
 } from '../../../common/test-helpers/ecs-log-lines.js'
 import { documentUploads } from './real.js'
@@ -23,9 +23,15 @@ const ID_WITH_SEPARATORS = '../../notifications/x'
 const ID_WITH_SEPARATORS_ENCODED = '..%2F..%2Fnotifications%2Fx'
 const JSON_CONTENT_TYPE = 'application/json'
 const NOT_FOUND_RESPONSE = { status: 404, statusText: 'Not Found' }
+const CONFLICT_RESPONSE = { status: 409, statusText: 'Conflict' }
 const SERVICE_UNAVAILABLE_RESPONSE = {
   status: 503,
   statusText: 'Service Unavailable'
+}
+const REGISTER_REQUEST = {
+  journeyId: JOURNEY_ID,
+  uploadId: UPLOAD_ID,
+  correlationId: CORRELATION_ID
 }
 const SESSION_ORG = '5900066'
 
@@ -45,11 +51,7 @@ describe('#documentUploads', () => {
       fetchMocker.mockResponse('', { status: 201 })
 
       await withOrganisationId(SESSION_ORG, () =>
-        documentUploads.register({
-          journeyId: JOURNEY_ID,
-          uploadId: UPLOAD_ID,
-          correlationId: CORRELATION_ID
-        })
+        documentUploads.register(REGISTER_REQUEST)
       )
 
       const requests = fetchMocker.requests()
@@ -70,16 +72,10 @@ describe('#documentUploads', () => {
     })
 
     it('Should throw with the response status when the session cannot be recorded', async () => {
-      fetchMocker.mockResponse(() => ({ status: 409, statusText: 'Conflict' }))
+      fetchMocker.mockResponse(() => CONFLICT_RESPONSE)
 
       await expect(
-        asSession(() =>
-          documentUploads.register({
-            journeyId: JOURNEY_ID,
-            uploadId: UPLOAD_ID,
-            correlationId: CORRELATION_ID
-          })
-        )
+        asSession(() => documentUploads.register(REGISTER_REQUEST))
       ).rejects.toMatchObject({
         message:
           'animals-backend refused to register document upload: 409 Conflict',
@@ -407,51 +403,39 @@ describe('#documentUploads — refusal log line', () => {
   const ecsLog = recordEcsLogLines()
 
   it('Should log the journey as event.reference and name the upload in the message when registering is refused', async () => {
-    fetchMocker.mockResponse(() => ({ status: 409, statusText: 'Conflict' }))
+    fetchMocker.mockResponse(() => ({ body: '{}', ...CONFLICT_RESPONSE }))
 
-    await asSession(() =>
-      documentUploads.register({
-        journeyId: JOURNEY_ID,
-        uploadId: UPLOAD_ID,
-        correlationId: CORRELATION_ID
-      })
-    ).catch((error) => error)
+    await expect(
+      asSession(() => documentUploads.register(REGISTER_REQUEST))
+    ).rejects.toThrow()
 
     expect(ecsLog.linesBesideExternalCalls()).toEqual([
-      {
-        ...ECS_PLATFORM_FIELDS,
-        'log.level': 'warn',
-        message: `Backend refused request for uploadId ${UPLOAD_ID}`,
+      backendRefusalLine({
+        namedIds: { uploadId: UPLOAD_ID },
         event: { reference: JOURNEY_ID },
         error: {
-          type: 'BackendRequestError',
           message:
-            'animals-backend refused to register document upload: 409 Conflict',
-          stack_trace: expect.stringMatching(/^BackendRequestError: /)
+            'animals-backend refused to register document upload: 409 Conflict'
         }
-      }
+      })
     ])
   })
 
   it('Should name the upload in the message, with no event.reference, when a scan status read is refused', async () => {
     fetchMocker.mockResponse(() => SERVICE_UNAVAILABLE_RESPONSE)
 
-    await asSession(() =>
-      documentUploads.scanStatus({ uploadId: UPLOAD_ID })
-    ).catch((error) => error)
+    await expect(
+      asSession(() => documentUploads.scanStatus({ uploadId: UPLOAD_ID }))
+    ).rejects.toThrow()
 
     expect(ecsLog.linesBesideExternalCalls()).toEqual([
-      {
-        ...ECS_PLATFORM_FIELDS,
-        'log.level': 'warn',
-        message: `Backend refused request for uploadId ${UPLOAD_ID}`,
+      backendRefusalLine({
+        namedIds: { uploadId: UPLOAD_ID },
         error: {
-          type: 'BackendRequestError',
           message:
-            'animals-backend refused to get document upload status: 503 Service Unavailable',
-          stack_trace: expect.stringMatching(/^BackendRequestError: /)
+            'animals-backend refused to get document upload status: 503 Service Unavailable'
         }
-      }
+      })
     ])
   })
 })

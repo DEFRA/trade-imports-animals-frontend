@@ -1,6 +1,7 @@
 import { statusCodes } from '../constants/status-codes.js'
 import { base, setlessBase, sharedCopy } from '../../app/shared/kit.js'
 import { setIdForPath, withSetContext } from '../../app/shared/set-context.js'
+import { isLoggedRefusal } from '../../app/services/persistence/records/errors.js'
 
 const ERROR_PAGE_COPY_KEY = {
   [statusCodes.notFound]: 'notFound',
@@ -30,9 +31,10 @@ export function catchAll(request, h) {
   const errorMessage = errorMessageFor(statusCode)
 
   if (statusCode >= statusCodes.internalServerError) {
+    const err = response.data?.cause ?? response
     request.logger.error(
       {
-        err: response.data?.cause ?? response,
+        ...(isLoggedRefusal(err) ? {} : { err }),
         statusCode,
         dataset: response.data?.dataset
       },

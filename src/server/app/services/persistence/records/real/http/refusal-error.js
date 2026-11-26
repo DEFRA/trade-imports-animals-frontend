@@ -1,8 +1,10 @@
 import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/backend-client/backend-dependency.js'
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_CONFLICT } from '../config.js'
+import { journeyReferenceFields } from '../journey-reference-fields.js'
+import { logger } from '../logger.js'
 
-export const failed = async (operation, response) => {
+export const refusalErrorFor = async (operation, response, { journeyId }) => {
   const error = new BackendRequestError(
     { dependency: BACKEND_DEPENDENCY, operation },
     response
@@ -14,7 +16,10 @@ export const failed = async (operation, response) => {
         error.code = body.code
       }
     } catch (err) {
-      error.cause = err
+      logger.warn(
+        { err, ...journeyReferenceFields(journeyId) },
+        `Backend refusal code could not be read: ${error.message}`
+      )
     }
   }
   return error
