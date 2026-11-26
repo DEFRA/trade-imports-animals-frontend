@@ -68,15 +68,23 @@ const emptyStateApplying = (answers, evaluation) =>
         copy: copy.noAnimalsIdentified,
         linkedPage: animalIdentificationPage,
         reason: 'permanent-address-no-animal-identified',
-        message:
-          'Permanent address shown with no animal identified on a line that needs one'
+        messages: {
+          shown:
+            'Permanent address shown with no animal identified on a line that needs one',
+          continuedPast:
+            'Permanent address continued past with no animal identified on a line that needs one'
+        }
       }
     : {
         copy: copy.noAnimalsCounted,
         linkedPage: consignmentDetailsPage,
         reason: 'permanent-address-no-animal-counted',
-        message:
-          'Permanent address shown with no animal counted on a line that needs one'
+        messages: {
+          shown:
+            'Permanent address shown with no animal counted on a line that needs one',
+          continuedPast:
+            'Permanent address continued past with no animal counted on a line that needs one'
+        }
       }
 
 const emptyStateLinkingTo = (
@@ -133,7 +141,13 @@ const redirectSkipping = (request, h, answers, evaluation, scope) => {
   return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
 }
 
-const logEmptyStateShown = (request, answers, evaluation, emptyState) =>
+const logNoAddressableAnimal = (
+  request,
+  answers,
+  evaluation,
+  emptyState,
+  outcome
+) =>
   request.logger.info(
     {
       journeyId: request.params.journeyId,
@@ -142,7 +156,7 @@ const logEmptyStateShown = (request, answers, evaluation, emptyState) =>
         linesNeedingPermanentAddress(answers, evaluation)
       )
     },
-    emptyState.message
+    emptyState.messages[outcome]
   )
 
 const get = async (request, h) => {
@@ -152,7 +166,7 @@ const get = async (request, h) => {
   }
   if (noAnimalIdentifiedOnALineThatNeedsOne(answers, evaluation)) {
     const emptyState = emptyStateApplying(answers, evaluation)
-    logEmptyStateShown(request, answers, evaluation, emptyState)
+    logNoAddressableAnimal(request, answers, evaluation, emptyState, 'shown')
     return render(request, h, journey, [], {
       emptyState: emptyStateLinkingTo(request, emptyState)
     })
@@ -174,11 +188,12 @@ const post = async (request, h) => {
     return redirectSkipping(request, h, answers, evaluation, scope)
   }
   if (noAnimalIdentifiedOnALineThatNeedsOne(answers, evaluation)) {
-    logEmptyStateShown(
+    logNoAddressableAnimal(
       request,
       answers,
       evaluation,
-      emptyStateApplying(answers, evaluation)
+      emptyStateApplying(answers, evaluation),
+      'continuedPast'
     )
     return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
   }
