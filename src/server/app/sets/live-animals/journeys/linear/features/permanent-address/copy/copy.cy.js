@@ -35,7 +35,7 @@ export const copy = {
   },
   noAnimalsCounted: {
     before: 'Ychwanegwch nifer yr anifeiliaid ar ',
-    linkText: 'fanylion y gyflwyniad',
+    linkText: 'fanylion y llwyth',
     after: ' cyn i chi barhau.'
   },
   noAnimalsIdentified: {
