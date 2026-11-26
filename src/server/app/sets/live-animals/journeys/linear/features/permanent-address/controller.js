@@ -183,20 +183,34 @@ const get = async (request, h) => {
   )
 }
 
+const redirectPastEmptyState = (request, h, answers, evaluation, scope) => {
+  logNoAddressableAnimal(
+    request,
+    answers,
+    evaluation,
+    emptyStateApplying(answers, evaluation),
+    'continuedPast'
+  )
+  return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
+}
+
+const logPlaceOfDestinationUnknown = (request, placeOfDestinationErrors) => {
+  if (Object.keys(placeOfDestinationErrors).length > 0) {
+    kit.logRefusal(request, {
+      level: 'warn',
+      reason: 'permanent-address-place-of-destination-unknown',
+      fieldErrors: placeOfDestinationErrors
+    })
+  }
+}
+
 const post = async (request, h) => {
   const { journey, answers, evaluation, scope } = await state.get(request, h)
   if (noLineNeedsAPermanentAddress(answers, evaluation)) {
     return redirectSkipping(request, h, answers, evaluation, scope)
   }
   if (noAnimalIdentifiedOnALineThatNeedsOne(answers, evaluation)) {
-    logNoAddressableAnimal(
-      request,
-      answers,
-      evaluation,
-      emptyStateApplying(answers, evaluation),
-      'continuedPast'
-    )
-    return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
+    return redirectPastEmptyState(request, h, answers, evaluation, scope)
   }
 
   const payload = request.payload ?? {}
@@ -217,13 +231,7 @@ const post = async (request, h) => {
   )
 
   if (Object.keys(fieldErrors).length > 0) {
-    if (Object.keys(placeOfDestinationErrors).length > 0) {
-      kit.logRefusal(request, {
-        level: 'warn',
-        reason: 'permanent-address-place-of-destination-unknown',
-        fieldErrors: placeOfDestinationErrors
-      })
-    }
+    logPlaceOfDestinationUnknown(request, placeOfDestinationErrors)
     return render(
       request,
       h,
