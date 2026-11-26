@@ -8,7 +8,5 @@ import { setTimeout } from 'node:timers/promises'
  * @param {string | object} body - The body to reply with
  * @returns {() => Promise<[number, string | object]>} A function to pass to a scope's `reply`
  */
-export const replyAfter = (delayMs, statusCode, body) => async () => {
-  await setTimeout(delayMs)
-  return [statusCode, body]
-}
+export const replyAfter = (delayMs, statusCode, body) => () =>
+  setTimeout(delayMs, [statusCode, body])
