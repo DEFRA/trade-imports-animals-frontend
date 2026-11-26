@@ -8,6 +8,7 @@ import {
 } from '../server/common/test-helpers/defra-id-network.js'
 import { recordEcsLogLines } from '../server/common/test-helpers/ecs-log-lines.js'
 import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { replyAfter } from '../server/common/test-helpers/reply-after.js'
 import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 import {
   setStackDefraIdRewrite,
@@ -98,9 +99,9 @@ describe('getOidcConfig', () => {
   })
 
   test('gives up on a discovery fetch Defra ID has not answered within the document timeout, and records it as a failed defra-id openid-configuration call', async () => {
-    interceptDiscovery()
-      .delay(OIDC_DOCUMENT_TIMEOUT_MS + 100)
-      .reply(200, defraIdDiscoveryDocument)
+    interceptDiscovery().reply(
+      replyAfter(OIDC_DOCUMENT_TIMEOUT_MS + 100, 200, defraIdDiscoveryDocument)
+    )
 
     await expect(getOidcConfig()).rejects.toThrow('Client request timeout')
 
