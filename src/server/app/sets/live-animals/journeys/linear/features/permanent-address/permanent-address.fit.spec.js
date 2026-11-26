@@ -623,7 +623,7 @@ test.describe('permanent address — no animal identified yet', () => {
     await signIn(page)
   })
 
-  test('shows the no-animals message in place of the cards, and a save from there changes nothing and returns to the consignment addresses page', async ({
+  test('shows the identify-an-animal message in place of the cards for a counted animal, linking to identification details, and a save from there changes nothing and returns to the consignment addresses page', async ({
     page
   }) => {
     await openCommodityDetails(page, [FELIS_CATUS_ROW])
@@ -646,7 +646,7 @@ test.describe('permanent address — no animal identified yet', () => {
       .getByRole('link', { name: copy.noAnimalsIdentified.linkText })
       .click()
     await expect(page).toHaveURL(
-      /\/notifications\/[^/]+\/consignment-details(?:\?.*)?$/
+      /\/notifications\/[^/]+\/commodities\/identification(?:\?.*)?$/
     )
 
     await page.goBack()

@@ -533,9 +533,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   stored on the animal identifier record, so a card can only exist once that
   record does.
 - A line that needs a permanent address with no animal identified yet shows
-  no cards; the "Add the number of animals on consignment details before you
-  can continue." message takes their place, and the save control still
-  renders but writes nothing.
+  no cards, and a message takes their place. When such a line carries a
+  number of animals, it is "Identify an animal on identification details
+  before you can continue.", linking to the identification details page.
+  When none does, it is "Add the number of animals on consignment details
+  before you can continue.", linking to the consignment details page. The
+  save control still renders but writes nothing.
 - Each card asks once, as its own radio group legend, whether the animal
   lives at the place of destination or at a new address. The page carries no
   second question above the cards.

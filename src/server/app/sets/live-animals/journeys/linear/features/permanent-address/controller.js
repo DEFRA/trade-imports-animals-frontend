@@ -7,8 +7,12 @@ import {
 } from '../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
+import { isBlank } from '../../../../../../lib/answered.js'
 import { commodityCodesOf, linesOf } from '../commodities/lines.js'
-import { consignmentDetailsPage } from '../commodities/page.js'
+import {
+  animalIdentificationPage,
+  consignmentDetailsPage
+} from '../commodities/page.js'
 import { toDisplayParty } from '../addresses/frozen-parties.js'
 import { permanentAddressPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
@@ -36,7 +40,7 @@ const render = (
   h,
   journey,
   cards,
-  { recoverableError = false } = {}
+  { recoverableError = false, emptyState = null } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -49,12 +53,35 @@ const render = (
     }),
     copy,
     cards,
-    noAnimalsIdentifiedHref: kit.carryTrail(
-      request,
-      pagePath(request.params.journeyId, consignmentDetailsPage.slug)
-    ),
+    emptyState,
     errorSummary: kit.errorSummary(summaryTextFor(cards, copy))
   })
+
+const anyLineNeedingPermanentAddressIsCounted = (answers, evaluation) =>
+  linesNeedingPermanentAddress(answers, evaluation).some(
+    ({ entry }) => !isBlank(entry.numberOfAnimalsQuantity)
+  )
+
+const emptyStateLinkingTo = (request, emptyStateCopy, linkedPage) => ({
+  copy: emptyStateCopy,
+  href: kit.carryTrail(
+    request,
+    pagePath(request.params.journeyId, linkedPage.slug)
+  )
+})
+
+const emptyStateFor = (request, answers, evaluation) =>
+  anyLineNeedingPermanentAddressIsCounted(answers, evaluation)
+    ? emptyStateLinkingTo(
+        request,
+        copy.noAnimalsIdentified,
+        animalIdentificationPage
+      )
+    : emptyStateLinkingTo(
+        request,
+        copy.noAnimalsCounted,
+        consignmentDetailsPage
+      )
 
 const renderCards = (answers, evaluation, placeOfDestination) =>
   buildCards(answers, evaluation, placeOfDestination, copy)
@@ -99,17 +126,23 @@ const redirectSkipping = (request, h, answers, evaluation, scope) => {
   return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
 }
 
-const logNoAnimalsIdentified = (request, answers, evaluation) =>
+const logEmptyStateShown = (request, answers, evaluation) => {
+  const counted = anyLineNeedingPermanentAddressIsCounted(answers, evaluation)
   request.logger.info(
     {
       journeyId: request.params.journeyId,
-      reason: 'permanent-address-no-animal-identified',
+      reason: counted
+        ? 'permanent-address-no-animal-identified'
+        : 'permanent-address-no-animal-counted',
       commodityCodes: commodityCodesOf(
         linesNeedingPermanentAddress(answers, evaluation)
       )
     },
-    'Permanent address shown with no animal identified on a line that needs one'
+    counted
+      ? 'Permanent address shown with no animal identified on a line that needs one'
+      : 'Permanent address shown with no animal counted on a line that needs one'
   )
+}
 
 const get = async (request, h) => {
   const { journey, answers, evaluation, scope } = await state.get(request, h)
@@ -117,8 +150,10 @@ const get = async (request, h) => {
     return redirectSkipping(request, h, answers, evaluation, scope)
   }
   if (noAnimalIdentifiedOnALineThatNeedsOne(answers, evaluation)) {
-    logNoAnimalsIdentified(request, answers, evaluation)
-    return render(request, h, journey, [])
+    logEmptyStateShown(request, answers, evaluation)
+    return render(request, h, journey, [], {
+      emptyState: emptyStateFor(request, answers, evaluation)
+    })
   }
   const placeOfDestinationParty = await toDisplayParty(
     answers.placeOfDestination
@@ -137,7 +172,7 @@ const post = async (request, h) => {
     return redirectSkipping(request, h, answers, evaluation, scope)
   }
   if (noAnimalIdentifiedOnALineThatNeedsOne(answers, evaluation)) {
-    logNoAnimalsIdentified(request, answers, evaluation)
+    logEmptyStateShown(request, answers, evaluation)
     return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
   }
 

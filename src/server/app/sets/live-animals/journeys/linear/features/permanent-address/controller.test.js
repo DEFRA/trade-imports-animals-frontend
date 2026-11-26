@@ -26,7 +26,10 @@ import {
   lineOf
 } from '../commodities/search/test-support.js'
 import { addressesPage } from '../addresses/page.js'
-import { consignmentDetailsPage } from '../commodities/page.js'
+import {
+  animalIdentificationPage,
+  consignmentDetailsPage
+} from '../commodities/page.js'
 import * as permanentAddress from './controller.js'
 import { cardKeyFor, fieldNameFor } from './cards.js'
 import { copy } from './copy/copy.en.js'
@@ -76,22 +79,38 @@ const fieldErrorOn = (result, field, key) =>
     ({ id }) => id === fieldNameFor(field, key)
   ).error
 
-const noAnimalIdentifiedSeed = () => ({
+const noAnimalCountedSeed = () => ({
   countryOfOrigin: 'FR',
   commodityLines: [lineOf(FELIS_CATUS_ROW)]
 })
 
-const expectNoAnimalsIdentifiedLogged = (result) =>
+const noAnimalIdentifiedSeed = () => ({
+  countryOfOrigin: 'FR',
+  commodityLines: [lineOf(FELIS_CATUS_ROW, { numberOfAnimalsQuantity: 2 })]
+})
+
+const expectEmptyStateLogged = (result, { reason, message }) =>
   expectOneLogged(result.logger, {
     level: 'info',
-    message:
-      'Permanent address shown with no animal identified on a line that needs one',
+    message,
     fields: expect.objectContaining({
       journeyId: result.journeyId,
-      reason: 'permanent-address-no-animal-identified',
+      reason,
       commodityCodes: [FELIS_CATUS_ROW.commodityCode]
     })
   })
+
+const NO_ANIMAL_COUNTED_LOG = {
+  reason: 'permanent-address-no-animal-counted',
+  message:
+    'Permanent address shown with no animal counted on a line that needs one'
+}
+
+const NO_ANIMAL_IDENTIFIED_LOG = {
+  reason: 'permanent-address-no-animal-identified',
+  message:
+    'Permanent address shown with no animal identified on a line that needs one'
+}
 
 const catAndFerretSeedWithKeys = () => ({
   seed: petConsignmentSeed(
@@ -142,22 +161,52 @@ describe('permanent-address — the guard', () => {
   })
 })
 
-describe('permanent-address — a line that needs one with no animal identified yet', () => {
+describe('permanent-address — a line that needs one with no animal counted yet', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should render the page with no cards and the empty-state message carrying the consignment details address, logging once', async () => {
+  it('Should render the page with no cards and the add-the-number-of-animals message linking to consignment details, logging once', async () => {
+    const seed = noAnimalCountedSeed()
+
+    const result = await driveHandler(get, { seed })
+
+    expect(cardsFrom(result)).toEqual([])
+    expect(result.view.context.emptyState).toEqual({
+      copy: copy.noAnimalsCounted,
+      href: pagePath(result.journeyId, consignmentDetailsPage.slug)
+    })
+    expectEmptyStateLogged(result, NO_ANIMAL_COUNTED_LOG)
+  })
+
+  it('Should leave the commodity lines as they were and redirect to the consignment addresses page on a save from the add-the-number-of-animals message, logging once', async () => {
+    const seed = noAnimalCountedSeed()
+
+    const result = await driveHandler(post, { seed, payload: {} })
+
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, addressesPage.slug)
+    )
+    expect(result.after.commodityLines).toEqual(seed.commodityLines)
+    expectEmptyStateLogged(result, NO_ANIMAL_COUNTED_LOG)
+  })
+})
+
+describe('permanent-address — a counted line that needs one with no animal identified yet', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should render the page with no cards and the identify-an-animal message linking to identification details, logging once', async () => {
     const seed = noAnimalIdentifiedSeed()
 
     const result = await driveHandler(get, { seed })
 
     expect(cardsFrom(result)).toEqual([])
-    expect(result.view.context.noAnimalsIdentifiedHref).toBe(
-      pagePath(result.journeyId, consignmentDetailsPage.slug)
-    )
-    expectNoAnimalsIdentifiedLogged(result)
+    expect(result.view.context.emptyState).toEqual({
+      copy: copy.noAnimalsIdentified,
+      href: pagePath(result.journeyId, animalIdentificationPage.slug)
+    })
+    expectEmptyStateLogged(result, NO_ANIMAL_IDENTIFIED_LOG)
   })
 
-  it('Should leave the commodity lines as they were and redirect to the consignment addresses page on a save from there, logging once', async () => {
+  it('Should leave the commodity lines as they were and redirect to the consignment addresses page on a save from the identify-an-animal message, logging once', async () => {
     const seed = noAnimalIdentifiedSeed()
 
     const result = await driveHandler(post, { seed, payload: {} })
@@ -166,7 +215,7 @@ describe('permanent-address — a line that needs one with no animal identified 
       pagePath(result.journeyId, addressesPage.slug)
     )
     expect(result.after.commodityLines).toEqual(seed.commodityLines)
-    expectNoAnimalsIdentifiedLogged(result)
+    expectEmptyStateLogged(result, NO_ANIMAL_IDENTIFIED_LOG)
   })
 })
 
