@@ -5,10 +5,7 @@ import { catchAll } from './errors.js'
 import { createServer } from '../../server.js'
 import { statusCodes } from '../constants/status-codes.js'
 import { mockOidcConfig } from '../test-helpers/mock-oidc-config.js'
-import {
-  BackendRequestError,
-  markRefusalLogged
-} from '../../app/services/persistence/records/errors.js'
+import { loggedBackendRefusal } from '../../app/engine/test-support.js'
 
 vi.mock('../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -221,15 +218,8 @@ describe('#catchAll', () => {
     )
   })
 
-  test('Should log a backend refusal logged where it was raised with its status and no error', () => {
-    const response = Boom.boomify(
-      markRefusalLogged(
-        new BackendRequestError(
-          { dependency: 'animals-backend', operation: 'submit-notification' },
-          { status: 503, statusText: 'Service Unavailable' }
-        )
-      )
-    )
+  test('Should log a refusal already logged where it was raised with the page status and no error', () => {
+    const response = Boom.boomify(loggedBackendRefusal('submit-notification'))
 
     catchAll({ response, logger: { error: mockErrorLogger } }, mockToolkit)
 

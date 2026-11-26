@@ -14,10 +14,8 @@ import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../lib/http-status.js'
 import { records as recordsReal } from '../services/persistence/records/real/index.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
-import {
-  BackendRequestError,
-  markRefusalLogged
-} from '../services/persistence/records/errors.js'
+import { BackendRequestError } from '../services/persistence/records/errors.js'
+import { markErrorLogged } from '../../common/helpers/logging/logged-error.js'
 import { BACKEND_DEPENDENCY } from '../../common/helpers/backend-client/backend-dependency.js'
 import {
   CYA_SLUG,
@@ -223,9 +221,9 @@ const requestLocation = (pathOf, journeyId, query) => {
 }
 
 /** The recoverable records error for a backend that answered 503 to
- * `operation`, its refusal logged where it was raised. */
-export const unavailableBackendError = (operation) =>
-  markRefusalLogged(
+ * `operation`, marked as already logged by the records adapter. */
+export const loggedBackendRefusal = (operation) =>
+  markErrorLogged(
     new BackendRequestError(
       { dependency: BACKEND_DEPENDENCY, operation },
       {

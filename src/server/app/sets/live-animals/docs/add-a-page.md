@@ -390,7 +390,8 @@ set-up in the test file:
   - `expectOneRefusalLogged` asserts the logger holds exactly one refusal line
   - `expectOneSaveFallbackLogged` asserts it holds exactly one save fallback line
   - `expectRemovalRefusedLogged` asserts it holds exactly one refused removal line
-  - `unavailableBackendError` builds the error a save failure is given
+  - `loggedBackendRefusal(operation)` builds a 503 backend refusal the records
+    adapter has already logged, the error a save failure is given
   - `useBackendRecords(setId)` registers the real records and the stub session
     for a describe, enables the shared `fetchMock` and clears its calls before
     each test, and resets the mocks and config after each test

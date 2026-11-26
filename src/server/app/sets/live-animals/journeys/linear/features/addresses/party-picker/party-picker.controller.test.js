@@ -12,7 +12,7 @@ import {
   expectOneRefusalLogged,
   expectRecoverableSaveFallback,
   resetMocksAndConfigAfterTests,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import {
@@ -748,7 +748,7 @@ describe('POST /consignors/select — recoverable save failure', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render the picker when saving the selection fails', async () => {
-    const failure = unavailableBackendError('save answers')
+    const failure = loggedBackendRefusal('save answers')
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID },
       startingFrom: [refusingSaves(failure)]
@@ -764,7 +764,7 @@ describe('POST /consignors/select — recoverable save failure', () => {
   it('Should re-render a failed save on the page it was posted from', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID, page: '2' },
-      startingFrom: [refusingSaves(unavailableBackendError('save answers'))]
+      startingFrom: [refusingSaves(loggedBackendRefusal('save answers'))]
     })
     const picker = pickerFrom(result)
 

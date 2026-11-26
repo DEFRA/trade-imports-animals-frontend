@@ -42,3 +42,13 @@ export const recordDependencyAvailability = ({ dependency, available }) => {
     publishEveryMs
   ).unref()
 }
+
+/**
+ * Forgets every recorded availability and stops the minute publish, so the
+ * next recorded availability starts it again.
+ */
+export const forgetRecordedDependencyAvailability = () => {
+  latestAvailabilityByDependency.clear()
+  clearInterval(availabilityPublishTimer)
+  availabilityPublishTimer = null
+}

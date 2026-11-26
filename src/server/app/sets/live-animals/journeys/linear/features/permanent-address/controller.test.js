@@ -8,7 +8,7 @@ import {
   getHandlerOf,
   postHandlerOf,
   refusingSaves,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
@@ -812,7 +812,7 @@ describe('permanent-address — a refused save', () => {
       catLine([{ animalIdentifierMicrochip: 'MC-1' }])
     )
     const key = cardKeyFor(0, 0)
-    const failure = unavailableBackendError('replaceFulfilment')
+    const failure = loggedBackendRefusal('replaceFulfilment')
 
     const result = await driveHandler(post, {
       seed,

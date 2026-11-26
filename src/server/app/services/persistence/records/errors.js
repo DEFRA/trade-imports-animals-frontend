@@ -10,19 +10,5 @@ export class BackendRequestError extends RefusedCallError {
   }
 }
 
-export const markRecoverableBackendError = (error) => {
-  error[RECOVERABLE_BACKEND_ERROR] = true
-  return error
-}
-
 export const isRecoverableBackendError = (error) =>
   error?.[RECOVERABLE_BACKEND_ERROR] === true
-
-const LOGGED_REFUSAL = Symbol('loggedRefusal')
-
-export const markRefusalLogged = (error) => {
-  error[LOGGED_REFUSAL] = true
-  return error
-}
-
-export const isLoggedRefusal = (error) => error?.[LOGGED_REFUSAL] === true

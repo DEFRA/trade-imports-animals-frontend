@@ -1,7 +1,10 @@
 import { headers } from './headers.js'
-import { refusalErrorFor } from './refusal-error.js'
+import { refusalCodeOf } from './refusal-code.js'
+import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/backend-client/backend-dependency.js'
 import { backendFetch } from '../../../../../../common/helpers/backend-client/backend-fetch.js'
-import { markRefusalLogged } from '../../errors.js'
+import { markErrorLogged } from '../../../../../../common/helpers/logging/logged-error.js'
+import { BackendRequestError } from '../../errors.js'
+import { HTTP_CONFLICT } from '../config.js'
 import { journeyReferenceFields } from '../journey-reference-fields.js'
 import { logger } from '../logger.js'
 
@@ -21,18 +24,41 @@ const refusalMessage = (otherIds) => {
     : `Backend refused request for ${named.join(', ')}`
 }
 
+const logUnreadRefusalCode = (err, response, journeyId) =>
+  logger.warn(
+    {
+      err,
+      http: { response: { status_code: response.status } },
+      ...journeyReferenceFields(journeyId)
+    },
+    'Backend refusal code could not be read'
+  )
+
 export const refuseUnlessOk = async (
   operation,
   response,
   { journeyId, ...otherIds } = {}
 ) => {
   if (!response.ok) {
-    const error = await refusalErrorFor(operation, response, { journeyId })
+    const error = new BackendRequestError(
+      { dependency: BACKEND_DEPENDENCY, operation },
+      response
+    )
+    if (response.status === HTTP_CONFLICT) {
+      try {
+        const code = await refusalCodeOf(response)
+        if (code) {
+          error.code = code
+        }
+      } catch (err) {
+        logUnreadRefusalCode(err, response, journeyId)
+      }
+    }
     logger.warn(
       { err: error, ...journeyReferenceFields(journeyId) },
       refusalMessage(otherIds)
     )
-    throw markRefusalLogged(error)
+    throw markErrorLogged(error)
   }
   return response
 }

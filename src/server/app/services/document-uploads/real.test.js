@@ -24,6 +24,7 @@ const ID_WITH_SEPARATORS_ENCODED = '..%2F..%2Fnotifications%2Fx'
 const JSON_CONTENT_TYPE = 'application/json'
 const NOT_FOUND_RESPONSE = { status: 404, statusText: 'Not Found' }
 const CONFLICT_RESPONSE = { status: 409, statusText: 'Conflict' }
+const CONFLICT_WITH_NO_CODE_RESPONSE = { body: '{}', ...CONFLICT_RESPONSE }
 const SERVICE_UNAVAILABLE_RESPONSE = {
   status: 503,
   statusText: 'Service Unavailable'
@@ -403,7 +404,7 @@ describe('#documentUploads — refusal log line', () => {
   const ecsLog = recordEcsLogLines()
 
   it('Should log the journey as event.reference and name the upload in the message when registering is refused', async () => {
-    fetchMocker.mockResponse(() => ({ body: '{}', ...CONFLICT_RESPONSE }))
+    fetchMocker.mockResponse(() => CONFLICT_WITH_NO_CODE_RESPONSE)
 
     await expect(
       asSession(() => documentUploads.register(REGISTER_REQUEST))

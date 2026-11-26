@@ -29,7 +29,7 @@ import {
   expectOneSaveFallbackLogged,
   journeyRequest,
   recordingLogger,
-  unavailableBackendError
+  loggedBackendRefusal
 } from '../engine/test-support.js'
 import {
   base,
@@ -262,9 +262,9 @@ describe('#recoverableSave', () => {
     expect(request.logger.entries).toEqual([])
   })
 
-  it('Should log the fallback once at info with the journey id and no error, then answer with the fallback, when the backend is unavailable', async () => {
+  it('Should log the fallback once at info with the journey id and no error, then answer with the fallback, when the recoverable refusal was already logged where it was raised', async () => {
     const request = journeyRequest('journey-1')
-    const failure = unavailableBackendError('save answers')
+    const failure = loggedBackendRefusal('save answers')
 
     const outcome = await recoverableSave(
       request,
@@ -282,7 +282,7 @@ describe('#recoverableSave', () => {
 
   it('Should log the ids the page passes beside the journey id', async () => {
     const request = journeyRequest('journey-1')
-    const failure = unavailableBackendError('save answers')
+    const failure = loggedBackendRefusal('save answers')
 
     await recoverableSave(
       request,

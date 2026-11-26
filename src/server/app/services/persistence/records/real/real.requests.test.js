@@ -14,6 +14,7 @@ import {
 } from '../fulfilment-codec/index.js'
 import { fulfilmentToNotification } from '../mapper.js'
 import { isRecoverableBackendError } from '../errors.js'
+import { isErrorLogged } from '../../../../../common/helpers/logging/logged-error.js'
 import { withOrganisationId } from '../../../../../common/helpers/organisation-id.js'
 import {
   ECS_PLATFORM_FIELDS,
@@ -547,16 +548,17 @@ describe('real records adapter — backend refusals', () => {
     ])
   })
 
-  it('Should log one warn line with the refusal code as error.code, and the journey as event.reference, when the backend refuses a copy', async () => {
+  it('Should reject a refused copy marked as logged, and log one warn line with the refusal code as error.code and the journey as event.reference', async () => {
     fetchMocker.mockResponse(
       JSON.stringify({ code: 'STALE_CONCURRENCY_TOKEN' }),
       { status: 409, statusText: 'Conflict' }
     )
 
-    await asDefaultOrganisation(() => records.copy(journeyId, 7, actor)).catch(
-      (error) => error
-    )
+    const surfaced = await asDefaultOrganisation(() =>
+      records.copy(journeyId, 7, actor)
+    ).catch((error) => error)
 
+    expect(isErrorLogged(surfaced)).toBe(true)
     expect(ecsLog.linesAtLevel('warn')).toEqual([
       backendRefusalLine({
         event: { reference: journeyId },
@@ -568,7 +570,7 @@ describe('real records adapter — backend refusals', () => {
     ])
   })
 
-  it('Should reject a 409 submit whose body is not JSON without a code or cause, and log the unread refusal code then the refusal, each with its error and the journey as event.reference', async () => {
+  it('Should reject a 409 submit whose body is not JSON marked as logged and without a code or cause, and log the unread refusal code with its status then the refusal, each with its error and the journey as event.reference', async () => {
     fetchMocker.mockResponse('Conflict', {
       status: 409,
       statusText: 'Conflict'
@@ -581,12 +583,13 @@ describe('real records adapter — backend refusals', () => {
     expect(surfaced).toMatchObject({ name: 'BackendRequestError', status: 409 })
     expect(surfaced.code).toBeUndefined()
     expect(surfaced.cause).toBeUndefined()
+    expect(isErrorLogged(surfaced)).toBe(true)
     expect(ecsLog.linesAtLevel('warn')).toEqual([
       {
         ...ECS_PLATFORM_FIELDS,
         'log.level': 'warn',
-        message:
-          'Backend refusal code could not be read: animals-backend refused to submit notification: 409 Conflict',
+        message: 'Backend refusal code could not be read',
+        http: { response: { status_code: 409 } },
         event: { reference: journeyId },
         error: {
           type: 'SyntaxError',
