@@ -7,6 +7,7 @@ import {
 } from '../server/common/test-helpers/defra-id-network.js'
 import { recordEcsLogLines } from '../server/common/test-helpers/ecs-log-lines.js'
 import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { replyAfter } from '../server/common/test-helpers/reply-after.js'
 import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 
 const getTraceIdMock = vi.hoisted(() => vi.fn())
@@ -89,7 +90,7 @@ describe('refreshTokens', () => {
   })
 
   test('gives up on a refresh Defra ID has not answered within three seconds', async () => {
-    interceptRefresh().delay(3100).reply(200, refreshedTokens)
+    interceptRefresh().reply(replyAfter(3100, 200, refreshedTokens))
 
     await expect(refreshTokens(refreshToken)).rejects.toThrow(
       'Client request timeout'
