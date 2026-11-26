@@ -6,6 +6,7 @@ import {
   addPlaceOfDestination,
   addressesSection,
   answerPermanentAddressCard,
+  cancelAndReturnToHub,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
   identifyAnimalsByMicrochip,
@@ -623,18 +624,46 @@ test.describe('permanent address — no animal identified yet', () => {
     await signIn(page)
   })
 
+  test('shows the add-the-number message in place of the cards for an uncounted animal, linking to consignment details, with the save control, and a save from there changes nothing and returns to the consignment addresses page', async ({
+    page
+  }) => {
+    await openCommodityDetails(page, [FELIS_CATUS_ROW])
+    await cancelAndReturnToHub(page).click()
+    await page.getByRole('link', { name: hubCopy.rows.addresses.title }).click()
+    await openPermanentAddressFromAddressesHub(page)
+
+    await expect(page.getByRole('region', { name: CAT_1 })).toHaveCount(0)
+    const noAnimalsCountedMessage = page.getByText(
+      `${copy.noAnimalsCounted.before}${copy.noAnimalsCounted.linkText}${copy.noAnimalsCounted.after}`
+    )
+    await expect(noAnimalsCountedMessage).toBeVisible()
+    await expect(saveAndContinue(page)).toBeVisible()
+
+    await page
+      .getByRole('link', { name: copy.noAnimalsCounted.linkText })
+      .click()
+    await expect(page).toHaveURL(
+      /\/notifications\/[^/]+\/consignment-details(?:\?.*)?$/
+    )
+
+    await page.goBack()
+    await saveAndContinue(page).click()
+    await expect(
+      page.getByRole('heading', { name: addressesCopy.hub.title })
+    ).toBeVisible()
+
+    await openPermanentAddressFromAddressesHub(page)
+    await expect(page.getByRole('region', { name: CAT_1 })).toHaveCount(0)
+    await expect(noAnimalsCountedMessage).toBeVisible()
+  })
+
   test('shows the identify-an-animal message in place of the cards for a counted animal, linking to identification details, and a save from there changes nothing and returns to the consignment addresses page', async ({
     page
   }) => {
     await openCommodityDetails(page, [FELIS_CATUS_ROW])
     await (await numberOfAnimalsFor(page, FELIS_CATUS_ROW)).fill('1')
     await saveAndContinue(page).click()
-    await saveAndReturnToHub(page).click()
-    await page.getByRole('link', { name: hubCopy.rows.addresses.title }).click()
-    await page
-      .getByRole('link', { name: addressesCopy.hub.permanentAddress.add })
-      .click()
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await openPermanentAddressFromHub(page)
 
     await expect(page.getByRole('region', { name: CAT_1 })).toHaveCount(0)
     const noAnimalsIdentifiedMessage = page.getByText(
@@ -655,10 +684,7 @@ test.describe('permanent address — no animal identified yet', () => {
       page.getByRole('heading', { name: addressesCopy.hub.title })
     ).toBeVisible()
 
-    await page
-      .getByRole('link', { name: addressesCopy.hub.permanentAddress.add })
-      .click()
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await openPermanentAddressFromAddressesHub(page)
     await expect(page.getByRole('region', { name: CAT_1 })).toHaveCount(0)
     await expect(noAnimalsIdentifiedMessage).toBeVisible()
   })
