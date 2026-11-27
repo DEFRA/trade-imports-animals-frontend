@@ -6,7 +6,7 @@ import {
   driveHandler,
   refusingSaves,
   expectNoRefusalLogged,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney,
   withFlowOnlyAnswers
 } from '../../../../../../../engine/test-support.js'
@@ -222,7 +222,7 @@ describe('/transporters/add/private', () => {
       seed: { transporterType: PRIVATE },
       payload: RECORD,
       startingFrom: [
-        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
+        refusingSaves(loggedBackendRefusal(SAVE_TRANSPORTER_OPERATION))
       ]
     })
 
@@ -234,7 +234,7 @@ describe('/transporters/add/private', () => {
       seed: { transporterType: PRIVATE },
       payload: RECORD,
       startingFrom: [
-        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
+        refusingSaves(loggedBackendRefusal(SAVE_TRANSPORTER_OPERATION))
       ]
     })
 
@@ -288,7 +288,7 @@ describe('/transporters/add/private keeps the transporter for the organisation',
       seed: { transporterType: PRIVATE },
       payload: UNSHIPPED_HAULIER,
       startingFrom: [
-        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
+        refusingSaves(loggedBackendRefusal(SAVE_TRANSPORTER_OPERATION))
       ]
     })
 

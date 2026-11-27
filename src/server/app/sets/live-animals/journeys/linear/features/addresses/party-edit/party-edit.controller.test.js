@@ -8,7 +8,7 @@ import {
   refusingSaves,
   expectOneSaveFallbackLogged,
   resetMocksAndConfigAfterTests,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import {
@@ -255,7 +255,7 @@ describe('Edit address details — where the trader returns to', () => {
   })
 
   it('Should re-render the form when saving fails', async () => {
-    const failure = unavailableBackendError('save answers')
+    const failure = loggedBackendRefusal('save answers')
     const result = await driveHandler(post, {
       seed: { consignor: STORED },
       payload: FORM,

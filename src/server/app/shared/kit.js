@@ -12,6 +12,7 @@ import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
+import { errFieldUnlessLogged } from '../../common/helpers/logging/logged-error.js'
 import { carryTrail, pushTrail, readReturnMarker } from './trail.js'
 
 export {
@@ -338,7 +339,8 @@ export const setlessBase = (title) => ({
 
 /**
  * Runs a save and answers a recoverable backend failure with the page's
- * fallback, logging the fallback taken at info.
+ * fallback, logging the fallback taken at info, with the failure as `err`
+ * unless its refusal was logged when it was raised.
  *
  * @param {object} request - the request being answered.
  * @param {() => Promise<*>} saveThunk - makes the save.
@@ -365,7 +367,8 @@ export const recoverableSave = async (
         {
           ...ids,
           journeyId: request.params.journeyId,
-          route: request.route?.path
+          route: request.route?.path,
+          ...errFieldUnlessLogged(error)
         },
         SAVE_FALLBACK_LOG_MESSAGE
       )
