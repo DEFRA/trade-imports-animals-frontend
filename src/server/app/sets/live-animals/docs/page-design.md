@@ -302,9 +302,11 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   below its saved records still shows the over-count message.
 - The in-card button says what pressing it does next: "Save and add another"
   while more than one animal is outstanding, "Save and finish" on the last,
-  and it is a primary button. It saves only its own species' current animal
-  and reloads with that form empty. A line of one animal has no in-card
-  button.
+  and it is a primary button. It reads every card, saves each card holding
+  typed values and reloads with those forms empty. A value that fails
+  validation in any card blocks the save and every typed value stays in its
+  field. The pressed card must hold a value itself, whatever the other cards
+  hold. A line of one animal has no in-card button.
 - "Save and continue" and "Save and return to overview"
   save only the forms of species with one animal. Values typed into the form
   of a species with more animals are neither validated nor saved by them.

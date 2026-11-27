@@ -937,16 +937,10 @@ test.describe('animal identification identifier validation', () => {
       [BOS_TAURUS_ROW, '2'],
       [BISON_BISON_ROW, '2']
     ])
-    const bosTaurusCard = speciesCard(page, BOS_TAURUS_ROW)
-    const bisonBisonCard = speciesCard(page, BISON_BISON_ROW)
-    const earTagLabel =
-      copy.identification.identifierLabels.animalIdentifierEarTag
-    const bosTaurusEarTag = bosTaurusCard.getByLabel(earTagLabel, {
-      exact: true
-    })
-    const bisonEarTag = bisonBisonCard.getByLabel(earTagLabel, { exact: true })
+    const bosTaurusEarTag = earTagFieldOf(page, BOS_TAURUS_ROW)
+    const bisonEarTag = earTagFieldOf(page, BISON_BISON_ROW)
     await bosTaurusEarTag.fill('UK000000000001')
-    await bisonBisonCard
+    await speciesCard(page, BISON_BISON_ROW)
       .getByRole('button', { name: copy.identification.saveAndAddAnother })
       .click()
 
@@ -957,7 +951,7 @@ test.describe('animal identification identifier validation', () => {
     )
     await expect(savedAnimalRow(page, BISON_BISON_ROW, 1)).toHaveCount(0)
     await expect(savedAnimalRow(page, BOS_TAURUS_ROW, 1)).toHaveCount(0)
-    await expect(bosTaurusEarTag).toHaveValue('')
+    await expect(bosTaurusEarTag).toHaveValue('UK000000000001')
   })
 
   test('validation: Save and return to overview with every identifier blank shows no error and goes to the overview', async ({
@@ -1424,37 +1418,55 @@ test.describe('animal identification without JavaScript', () => {
     await signIn(page)
   })
 
-  test("saves only the pressed card's species and reloads with its form empty", async ({
+  test("saves every card's typed animal when one card's button is pressed and reloads each form empty", async ({
     page
   }) => {
     await openIdentification(page, [
       [BOS_TAURUS_ROW, '2'],
       [BISON_BISON_ROW, '2']
     ])
-    await page.locator(EAR_TAG_FIELD).fill('UK000000000001')
-    await page
-      .locator(SECOND_EAR_TAG_FIELD)
-      .fill('X'.repeat(MAX_IDENTIFIER_LENGTH + 1))
+    await earTagFieldOf(page, BOS_TAURUS_ROW).fill('UK000000000001')
+    await earTagFieldOf(page, BISON_BISON_ROW).fill('UK000000000002')
     await speciesCard(page, BISON_BISON_ROW)
       .getByRole('button', { name: copy.identification.saveAndAddAnother })
       .click()
 
     await expect(errorSummary(page)).toHaveCount(0)
-    await expect(savedAnimalRow(page, BISON_BISON_ROW, 1)).toBeVisible()
-    await expect(page.locator(EAR_TAG_FIELD)).toHaveValue('')
-    await expect(page.locator(SECOND_EAR_TAG_FIELD)).toHaveValue('')
+    await expect(savedAnimalRow(page, BOS_TAURUS_ROW, 1)).toContainText(
+      'UK000000000001'
+    )
+    await expect(savedAnimalRow(page, BISON_BISON_ROW, 1)).toContainText(
+      'UK000000000002'
+    )
+    await expect(earTagFieldOf(page, BOS_TAURUS_ROW)).toHaveValue('')
+    await expect(earTagFieldOf(page, BISON_BISON_ROW)).toHaveValue('')
+  })
+
+  test("refuses another card's over-long value on a card button, saving neither card and keeping both typed values", async ({
+    page
+  }) => {
+    const tooLong = 'X'.repeat(MAX_IDENTIFIER_LENGTH + 1)
+    await openIdentification(page, [
+      [BOS_TAURUS_ROW, '2'],
+      [BISON_BISON_ROW, '2']
+    ])
+    await earTagFieldOf(page, BOS_TAURUS_ROW).fill(tooLong)
+    await earTagFieldOf(page, BISON_BISON_ROW).fill('UK000000000002')
+    await speciesCard(page, BISON_BISON_ROW)
+      .getByRole('button', { name: copy.identification.saveAndAddAnother })
+      .click()
+
     await expect(
-      speciesCard(page, BOS_TAURUS_ROW).getByRole('heading', {
-        name: copy.identification.counter(
-          labelFor(BOS_TAURUS_ROW.speciesLatinName),
-          1,
-          2
-        ),
-        exact: true
-      })
+      errorSummaryLinks(
+        page,
+        copy.identification.errors.identifierMax.animalIdentifierEarTag
+      )
     ).toBeVisible()
-    await expect(
-      speciesCard(page, BOS_TAURUS_ROW).getByRole('table')
-    ).toHaveCount(0)
+    await expect(earTagFieldOf(page, BOS_TAURUS_ROW)).toHaveValue(tooLong)
+    await expect(earTagFieldOf(page, BISON_BISON_ROW)).toHaveValue(
+      'UK000000000002'
+    )
+    await expect(savedAnimalRow(page, BOS_TAURUS_ROW, 1)).toHaveCount(0)
+    await expect(savedAnimalRow(page, BISON_BISON_ROW, 1)).toHaveCount(0)
   })
 })
