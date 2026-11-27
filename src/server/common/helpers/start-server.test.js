@@ -33,8 +33,10 @@ import { createServer } from '../../server.js'
 describe('#startServer', () => {
   describe('When server starts', () => {
     let server
+    restoreConfigAfterEach(['httpProxy'])
 
     beforeAll(async () => {
+      config.set('httpProxy', null)
       server = await startServer()
     })
 

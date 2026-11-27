@@ -56,15 +56,10 @@ const capIfAtCap = (answers, { index, entry }) => {
   return isAtCap(cap, (entry.animalIdentifiers ?? []).length) ? cap : null
 }
 
-const linesToReadFormsFor = (action, answers, lines) => {
-  if (isImplicitSubmitAction(action)) {
-    return lines
-  }
-  const addIndex = parseAddAction(action)
-  return addIndex === null
-    ? lines.filter(({ index }) => lineHoldsOneAnimal(answers, index))
-    : lines.filter(({ index }) => index === addIndex)
-}
+const linesToReadFormsFor = (action, answers, lines) =>
+  isImplicitSubmitAction(action) || parseAddAction(action) !== null
+    ? lines
+    : lines.filter(({ index }) => lineHoldsOneAnimal(answers, index))
 
 export const buildLineForms = (payload, answers, lines, action) => {
   const capByLineAtCap = new Map(
@@ -103,11 +98,11 @@ export const capReachedResponse = ({
 }
 
 export const withEmptyFormGuard = (errors, forms, addIndex) => {
-  const anyData = [...forms.values()].some((form) => form.holdsData)
-  if (addIndex === null || anyData || !forms.has(addIndex)) {
+  const pressedForm = forms.get(addIndex)
+  if (pressedForm === undefined || pressedForm.holdsData) {
     return errors
   }
-  const { commodityCode, speciesLatinName } = forms.get(addIndex)
+  const { commodityCode, speciesLatinName } = pressedForm
   const [first] = scopedFields(commodityCode, speciesLatinName)
   return {
     ...errors,

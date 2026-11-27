@@ -97,6 +97,12 @@ const viewContext = async (seed) => {
 const viewCards = async (seed) =>
   (await viewContext(seed)).sections.flatMap((section) => section.cards)
 
+const typedValueOf = (view, fieldId) =>
+  view.context.sections
+    .flatMap((section) => section.cards)
+    .flatMap((card) => card.fields)
+    .find((field) => field.id === fieldId).value
+
 const textsOf = (cells) => cells.map((cell) => cell.text)
 
 const savedAnimalLabels = (card) =>
@@ -555,7 +561,7 @@ describe(`${SUITE} — Save and add another`, () => {
     expectNoRefusalLogged(result.logger)
   })
 
-  it("Should reject a blank card's own Save and add another beside a filled sibling, reading neither card's value", async () => {
+  it("Should reject a blank card's own Save and add another beside a filled sibling, saving neither and keeping the sibling's value", async () => {
     const result = await driveHandler(post, {
       seed: withOriginSaved({
         commodityLines: [
@@ -571,6 +577,7 @@ describe(`${SUITE} — Save and add another`, () => {
     expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
     expect(result.after.commodityLines[1].animalIdentifiers).toBeUndefined()
+    expect(typedValueOf(result.view, EAR_TAG_FIELD_0)).toBe('UK1')
     expectNoRefusalLogged(result.logger)
   })
 
@@ -639,7 +646,7 @@ describe(`${SUITE} — Save and add another`, () => {
     })
   })
 
-  it("Should save only the pressed card's animal and show no error for another species' over-long value", async () => {
+  it("Should save every card's typed animal when one card's Save and add another is pressed", async () => {
     const result = await driveHandler(post, {
       seed: withOriginSaved({
         commodityLines: [
@@ -650,17 +657,40 @@ describe(`${SUITE} — Save and add another`, () => {
       payload: {
         action: 'add:0',
         [EAR_TAG_FIELD_0]: 'UK1',
-        [EAR_TAG_FIELD_1]: 'x'.repeat(59)
+        [EAR_TAG_FIELD_1]: 'UK2'
       }
     })
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, IDENTIFICATION_PAGE)
     })
-    expect(
-      result.after.commodityLines[0].animalIdentifiers.map(
-        (unit) => unit.animalIdentifierEarTag
-      )
-    ).toEqual(['UK1'])
+    const earTagsOf = (line) =>
+      line.animalIdentifiers.map((unit) => unit.animalIdentifierEarTag)
+    expect(earTagsOf(result.after.commodityLines[0])).toEqual(['UK1'])
+    expect(earTagsOf(result.after.commodityLines[1])).toEqual(['UK2'])
+  })
+
+  it("Should refuse another card's over-long value on Save and add another, saving neither card and keeping both typed values", async () => {
+    const tooLong = 'x'.repeat(59)
+    const result = await driveHandler(post, {
+      seed: withOriginSaved({
+        commodityLines: [
+          bosTaurusLine({ numberOfAnimalsQuantity: '2' }),
+          bisonBisonLine({ numberOfAnimalsQuantity: '2' })
+        ]
+      }),
+      payload: {
+        action: 'add:1',
+        [EAR_TAG_FIELD_0]: tooLong,
+        [EAR_TAG_FIELD_1]: 'UK2'
+      }
+    })
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors).toEqual({
+      [EAR_TAG_FIELD_0]: EAR_TAG_REFUSED
+    })
+    expect(typedValueOf(result.view, EAR_TAG_FIELD_0)).toBe(tooLong)
+    expect(typedValueOf(result.view, EAR_TAG_FIELD_1)).toBe('UK2')
+    expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
     expect(result.after.commodityLines[1].animalIdentifiers).toBeUndefined()
   })
 
@@ -809,12 +839,7 @@ describe(`${SUITE} — Enter in a field`, () => {
       payload: { action: IMPLICIT_SUBMIT, [EAR_TAG_FIELD_0]: tooLong }
     })
     expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(EAR_TAG_REFUSED)
-    const [card] = result.view.context.sections.flatMap(
-      (section) => section.cards
-    )
-    expect(
-      card.fields.find((field) => field.id === EAR_TAG_FIELD_0).value
-    ).toBe(tooLong)
+    expect(typedValueOf(result.view, EAR_TAG_FIELD_0)).toBe(tooLong)
     expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
   })
 

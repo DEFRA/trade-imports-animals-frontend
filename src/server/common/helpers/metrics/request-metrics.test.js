@@ -114,7 +114,7 @@ describe('request metrics', () => {
   })
 
   const registerPageServer = async () => {
-    server = hapi.server()
+    server = hapi.server({ host: '127.0.0.1' })
     await server.register([callCounts, requestMetrics, vision])
     server.views({
       engines: { html: { compile: () => () => 'page' } },
