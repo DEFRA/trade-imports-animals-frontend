@@ -5,11 +5,6 @@ export const copy = {
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },
   change: 'Newid',
-  cancelAmend: {
-    successTitle: 'Llwyddiant',
-    successBody:
-      'Mae’r diwygiad wedi’i ganslo ac mae’r fersiwn a gyflwynwyd wedi’i hadfer.'
-  },
   sections: {
     aboutTheConsignment: '1. Am y llwyth',
     descriptionOfTheGoods: '2. Disgrifiad o’r nwyddau',

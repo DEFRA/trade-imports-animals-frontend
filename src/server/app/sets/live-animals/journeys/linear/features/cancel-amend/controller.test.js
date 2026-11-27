@@ -25,6 +25,7 @@ import {
 import { store } from '../../../../../../engine/store.js'
 import {
   actWithSessionOrganisation,
+  expectOneLogged,
   journeyRequest,
   stubH
 } from '../../../../../../engine/test-support.js'
@@ -36,6 +37,7 @@ import * as cancelAmend from './controller.js'
 
 const NOTIFICATION_VIEW_SLUG = 'notification-view'
 
+const { CANCEL_AMEND_REFUSAL } = cancelAmend
 const get = cancelAmend.routes.find((route) => route.method === 'GET').handler
 const post = cancelAmend.routes.find((route) => route.method === 'POST').handler
 
@@ -72,7 +74,7 @@ describe('cancel amendment routes', () => {
     vi.unstubAllGlobals()
   })
 
-  it('Should render the confirmation for an amending journey with journey-scoped actions', async () => {
+  it('Should render the question as heading and title, with the link back targeting the notification view', async () => {
     const journeyId = await startAmend()
     const h = stubH()
 
@@ -82,23 +84,23 @@ describe('cancel amendment routes', () => {
       'live-animals/journeys/linear/features/cancel-amend/template'
     )
     expect(response.context).toMatchObject({
-      heading: 'Cancel this amendment?',
+      pageTitle: 'Are you sure you want to cancel this amendment?',
+      heading: 'Are you sure you want to cancel this amendment?',
       cancelAction: pagePath(journeyId, 'cancel-amend'),
-      noHref: pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
+      goBackHref: pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
     })
-    expect(response.context.copy.body).toContain('submitted version restored')
   })
 
-  it('Should show the Amend tag but offer no Cancel amend on the confirmation page itself', async () => {
+  it('Should carry no status strip and no back link on the confirmation page', async () => {
     const journeyId = await startAmend()
 
     const response = await get(journeyRequest(journeyId), stubH())
 
-    expect(response.context.journeyStrip.status.text).toBe('Amend')
-    expect(response.context.journeyStrip.cancelAmend).toBeUndefined()
+    expect(response.context.journeyStrip).toBeNull()
+    expect(response.context.backLink).toBeUndefined()
   })
 
-  it('Should cancel AMEND, restore submitted content and redirect to the read-only CYA with success', async () => {
+  it('Should cancel AMEND, restore the submitted content and redirect to the notification view at the address that marks the cancellation', async () => {
     const journeyId = await startAmend()
 
     const response = await post(journeyRequest(journeyId), stubH())
@@ -113,7 +115,7 @@ describe('cancel amendment routes', () => {
     )
   })
 
-  it('Should redirect non-AMEND journeys without attempting the transition', async () => {
+  it('Should send every non-amend state to the notification list without attempting the transition', async () => {
     const draft = await store.create()
     const submitted = await store.create()
     await records.submit(
@@ -126,7 +128,7 @@ describe('cancel amendment routes', () => {
       redirect: dashboardPath()
     })
     expect(await post(journeyRequest(submitted.journeyId), stubH())).toEqual({
-      redirect: pagePath(submitted.journeyId, NOTIFICATION_VIEW_SLUG)
+      redirect: dashboardPath()
     })
     expect((await records.load({ journeyId: draft.journeyId })).status).toBe(
       'draft'
@@ -134,6 +136,28 @@ describe('cancel amendment routes', () => {
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(SUBMITTED)
+  })
+
+  it('Should log the refusal once with the journey id, its status and the reason', async () => {
+    const submitted = await store.create()
+    await records.submit(
+      submitted.journeyId,
+      undefined,
+      submitted.concurrencyToken
+    )
+    const request = journeyRequest(submitted.journeyId)
+
+    await get(request, stubH())
+
+    expectOneLogged(request.logger, {
+      level: 'info',
+      fields: {
+        journeyId: submitted.journeyId,
+        status: SUBMITTED,
+        refusal: CANCEL_AMEND_REFUSAL.notInAmend
+      },
+      message: 'Cancel amend refused'
+    })
   })
 
   it('Should reject an unknown journey at the known-journey gate', async () => {

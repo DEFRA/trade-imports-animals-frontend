@@ -110,14 +110,6 @@ const reviewTitle = (journey) =>
     ? copy.resubmittingTitle
     : copy.title
 
-const cancelAmendBanner = (amendmentCancelled) =>
-  amendmentCancelled
-    ? {
-        titleText: copy.cancelAmend.successTitle,
-        text: copy.cancelAmend.successBody
-      }
-    : null
-
 const renderCya = async (
   request,
   h,
@@ -127,7 +119,6 @@ const renderCya = async (
     scope,
     evaluation,
     readOnly,
-    amendmentCancelled,
     recoverableError = false,
     parties = answers,
     partyErrors = {},
@@ -173,7 +164,6 @@ const renderCya = async (
     ),
     sections,
     readOnly,
-    successBanner: cancelAmendBanner(amendmentCancelled),
     recoverableError,
     deleteButton:
       journey.status === state.AMEND ? deleteButtonFor(journey) : null,
@@ -227,7 +217,6 @@ export const renderNotificationView = async (
     scope,
     evaluation,
     readOnly,
-    amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
     permanentAddresses,

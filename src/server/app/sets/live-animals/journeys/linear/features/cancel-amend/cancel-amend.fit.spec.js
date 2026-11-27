@@ -6,6 +6,7 @@ import {
   cancelAmendLink,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
+  notificationReferenceHeading,
   openReviewFromHub,
   saveAndReturnToHub,
   signIn,
@@ -21,6 +22,8 @@ import { copy } from './copy/copy.en.js'
 const TAG = '.govuk-tag'
 const strip = (page) => page.locator('.app-journey-strip')
 const viewHeaderTag = (page) => page.locator(`main ${TAG}`)
+const goBackLink = (page) =>
+  page.getByRole('link', { name: copy.goBackLink, exact: true })
 
 const expectAmendStrip = async (page) => {
   await expect(strip(page).locator(TAG)).toHaveText(
@@ -38,22 +41,37 @@ test.describe('cancel-amend feature', () => {
     await amendChangeOriginAndOpenCancel(page, reference)
   })
 
-  test('renders confirmation copy, actions and review back link', async ({
+  test('the whole content is the question, the confirm button and Go back, with nothing above the heading', async ({
     page
   }) => {
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-    await expect(page.getByText(copy.body)).toBeVisible()
+    const contentColumn = page.locator('.govuk-grid-column-two-thirds')
+    const heading = page.getByRole('heading', { name: copy.title, level: 1 })
+
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+    await expect(contentColumn.locator('> *')).toHaveCount(2)
+    await expect(contentColumn.locator('> form')).toHaveCount(1)
     await expect(
-      page.getByRole('button', { name: copy.confirmButton })
-    ).toBeVisible()
-    await expect(page.getByRole('button', { name: copy.noLink })).toBeVisible()
+      contentColumn.locator('> form .govuk-button-group > *')
+    ).toHaveCount(2)
+    await expect(contentColumn).toHaveText(
+      `${copy.title} ${copy.confirmButton} ${copy.goBackLink}`
+    )
+    await expect(goBackLink(page)).toHaveAttribute(
+      'href',
+      /\/notifications\/[^/]+\/notification-view$/
+    )
     await expect(
       page.getByRole('link', { name: 'Back', exact: true })
-    ).toHaveAttribute('href', /\/notifications\/[^/]+\/notification-view$/)
+    ).toHaveCount(0)
+
+    const beforeTitle = heading.locator('xpath=preceding-sibling::*')
+    await expect(beforeTitle).toHaveCount(0)
   })
 
-  test('No keeps the amendment and its changed value', async ({ page }) => {
-    await page.getByRole('button', { name: copy.noLink }).click()
+  test('Go back keeps the amendment and its changed value', async ({
+    page
+  }) => {
+    await goBackLink(page).click()
 
     await expect(
       page.getByRole('heading', { name: checkAnswersCopy.resubmittingTitle })
@@ -72,20 +90,19 @@ test.describe('cancel-amend feature', () => {
 
     await expect(page).toHaveURL(/\/cancel-amend(?:\?from=[^#]*)?$/)
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-    await expect(strip(page).locator(TAG)).toHaveText(
-      sharedCopy.journeyStrip.amend
-    )
-    await expect(cancelAmendLink(page)).toHaveCount(0)
+    await expect(strip(page)).toHaveCount(0)
   })
 
-  test('confirmation restores the submitted snapshot and shows its banner', async ({
+  test('confirmation opens the notification view showing it Submitted with no banner above the reference', async ({
     page
   }) => {
     await page.getByRole('button', { name: copy.confirmButton }).click()
 
+    const referenceHeading = notificationReferenceHeading(page)
+    await expect(referenceHeading).toBeVisible()
     await expect(
-      page.getByText(checkAnswersCopy.cancelAmend.successBody)
-    ).toBeVisible()
+      referenceHeading.locator('xpath=preceding-sibling::*')
+    ).toHaveCount(0)
     await expect(viewHeaderTag(page)).toHaveText(
       sharedCopy.journeyStrip.submitted
     )
@@ -100,11 +117,28 @@ test.describe('cancel-amend feature', () => {
     page
   }) => {
     await page.getByRole('button', { name: copy.confirmButton }).click()
-    await expect(
-      page.getByText(checkAnswersCopy.cancelAmend.successBody)
-    ).toBeVisible()
+    await expect(viewHeaderTag(page)).toHaveText(
+      sharedCopy.journeyStrip.submitted
+    )
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(BASE)
+    await expect(
+      page.getByRole('heading', { name: dashboardCopy.notificationsHeading })
+    ).toBeVisible()
+  })
+
+  test('opening the cancel-amendment address again once the amendment has been cancelled opens the notification list', async ({
+    page
+  }) => {
+    await page.getByRole('button', { name: copy.confirmButton }).click()
+    await expect(viewHeaderTag(page)).toHaveText(
+      sharedCopy.journeyStrip.submitted
+    )
+    const reference = journeyIdFromPage(page)
+
+    await page.goto(`${BASE}/notifications/${reference}/cancel-amend`)
 
     await expect(page).toHaveURL(BASE)
     await expect(
