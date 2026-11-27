@@ -95,7 +95,7 @@
     "pino": "10.4.0",
     "pino-pretty": "13.2.0",
     "semver": "7.8.6",
-    "undici": "8.12.4"
+    "undici": "8.13.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
@@ -104,7 +104,7 @@
     "@playwright/test": "1.65.0",
     "@vitest/coverage-v8": "5.1.1",
     "audit-ci": "7.1.0",
-    "autoprefixer": "10.6.2",
+    "autoprefixer": "10.7.0",
     "babel-loader": "10.1.1",
     "clean-webpack-plugin": "4.0.0",
     "copy-webpack-plugin": "14.0.0",
@@ -114,7 +114,7 @@
     "husky": "9.1.7",
     "jsdom": "31.0.1",
     "lint-staged": "17.6.1",
-    "mongodb": "7.9.0",
+    "mongodb": "7.9.1",
     "neostandard": "0.14.1",
     "nock": "15.0.6",
     "nodemon": "3.1.14",
@@ -130,10 +130,10 @@
     "stylelint": "17.16.0",
     "stylelint-config-gds": "3.0.0",
     "terser-webpack-plugin": "5.6.1",
-    "testcontainers": "12.2.1",
+    "testcontainers": "12.2.2",
     "vitest": "5.1.1",
     "vitest-fetch-mock": "0.4.5",
-    "webpack": "5.112.2",
+    "webpack": "5.113.0",
     "webpack-assets-manifest": "6.5.6",
     "webpack-cli": "7.3.1"
   },
