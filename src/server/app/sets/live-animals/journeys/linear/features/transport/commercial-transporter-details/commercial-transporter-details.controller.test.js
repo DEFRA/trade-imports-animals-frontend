@@ -6,7 +6,7 @@ import {
   driveHandler,
   refusingSaves,
   expectNoRefusalLogged,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
@@ -252,7 +252,7 @@ describe('/transporters/add/commercial', () => {
       seed: commercialSeed(),
       payload: { ...RECORD, country: NORTHERN_IRELAND },
       startingFrom: [
-        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
+        refusingSaves(loggedBackendRefusal(SAVE_TRANSPORTER_OPERATION))
       ]
     })
 
@@ -264,7 +264,7 @@ describe('/transporters/add/commercial', () => {
       seed: { transporterType: COMMERCIAL },
       payload: { ...RECORD, country: NORTHERN_IRELAND },
       startingFrom: [
-        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
+        refusingSaves(loggedBackendRefusal(SAVE_TRANSPORTER_OPERATION))
       ]
     })
 
@@ -282,7 +282,7 @@ describe('/transporters/add/commercial', () => {
     }
     const saveTransporter = vi
       .spyOn(transporters, 'saveTransporter')
-      .mockRejectedValue(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
+      .mockRejectedValue(loggedBackendRefusal(SAVE_TRANSPORTER_OPERATION))
 
     try {
       const result = await driveHandler(postHandler, {
@@ -370,7 +370,7 @@ describe('/transporters/add/commercial keeps the transporter for the organisatio
       seed: commercialSeed(),
       payload: HAULIER,
       startingFrom: [
-        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
+        refusingSaves(loggedBackendRefusal(SAVE_TRANSPORTER_OPERATION))
       ]
     })
 

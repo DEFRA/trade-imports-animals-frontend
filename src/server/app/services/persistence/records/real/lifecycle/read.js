@@ -24,7 +24,7 @@ export const list = async ({
     'list-notifications',
     `${notificationsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
     { method: 'GET' },
-    { referenceNumber }
+    { journeyId: referenceNumber }
   )
   const result = await response.json()
   return {

@@ -55,7 +55,7 @@ import {
   registerTestRequestLogger,
   registerTestSessionAuth,
   saveFallbackEntry,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { requiredEarlierAnswers } from '../../../../test-support.js'
@@ -2186,7 +2186,7 @@ describe('documents — backend and upload service failures', () => {
 
   it('Should log the removal save fallback at info with the index and the upload id, keeping the document', async () => {
     const { uploadId, seed } = await seededUpload()
-    const failure = unavailableBackendError(SAVE_ANSWERS)
+    const failure = loggedBackendRefusal(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       seed,
       startingFrom: [refusingSaves(failure)],
@@ -2211,7 +2211,7 @@ describe('documents — backend and upload service failures', () => {
   })
 
   it('Should log the retried removal save fallback at info, with the index and the upload id, when the notification still cannot be saved', async () => {
-    const failure = unavailableBackendError(SAVE_ANSWERS)
+    const failure = loggedBackendRefusal(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       startingFrom: [refusingSaves(failure)],
       payload: retryRemovalPayload

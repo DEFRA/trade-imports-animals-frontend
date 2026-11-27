@@ -12,7 +12,7 @@ import {
   refusingSaves,
   resetMocksAndConfigAfterTests,
   stubH,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { addressBookRefusingAddresses } from '../../../../../../engine/address-book-test-support.js'
@@ -709,7 +709,7 @@ describe('POST addresses — the same-as shortcut', () => {
   })
 
   it('Should re-render the addresses page with its recoverable banner when saving the copy fails', async () => {
-    const failure = unavailableBackendError('save answers')
+    const failure = loggedBackendRefusal('save answers')
     const result = await driveHandler(postAddresses, {
       seed: { placeOfOrigin: PLACE_OF_ORIGIN_ANSWER },
       payload: { action: sameAsActionFor('consignor') },

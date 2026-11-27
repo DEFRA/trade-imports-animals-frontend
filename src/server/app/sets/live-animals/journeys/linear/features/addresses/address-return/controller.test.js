@@ -9,7 +9,7 @@ import {
   expectOneSaveFallbackLogged,
   resetMocksAndConfigAfterTests,
   trailQuery,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { addressBookAnswering } from '../../../../../../../engine/address-book-test-support.js'
@@ -180,7 +180,7 @@ describe('GET /address-return', () => {
 
     it('Should redirect to the party page when saving the returned address fails', async () => {
       addressBookAnswering({ body: newAddressBody() })
-      const failure = unavailableBackendError('save answers')
+      const failure = loggedBackendRefusal('save answers')
 
       const result = await driveHandler(handler, {
         query: returnedQuery(ADDRESS_LANDING.SELECT),

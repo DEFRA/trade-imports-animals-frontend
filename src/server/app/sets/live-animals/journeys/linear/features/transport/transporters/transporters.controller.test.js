@@ -7,7 +7,7 @@ import {
   refusingSaves,
   reviewChangeLinkQuery,
   expectNoRefusalLogged,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney,
   withFlowOnlyAnswers
 } from '../../../../../../../engine/test-support.js'
@@ -213,7 +213,7 @@ describe('/transporters', () => {
     const { response } = await driveHandler(postHandler, {
       payload: { transporter: GARCIA_ID },
       startingFrom: [
-        refusingSaves(unavailableBackendError('save the transporter'))
+        refusingSaves(loggedBackendRefusal('save the transporter'))
       ]
     })
 
@@ -230,7 +230,7 @@ describe('/transporters', () => {
         transporter: ABERDEEN_ID
       },
       startingFrom: [
-        refusingSaves(unavailableBackendError('save the transporter'))
+        refusingSaves(loggedBackendRefusal('save the transporter'))
       ]
     })
 

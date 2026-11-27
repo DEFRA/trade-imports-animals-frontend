@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events'
 import { vi } from 'vitest'
 
 import { reportRedisConnectionEvents } from './redis-connection-events.js'
+import { forgetRecordedDependencyAvailability } from './metrics/dependency-availability.js'
 import {
   DEPENDENCY_AVAILABLE,
   availabilityPublish,
@@ -42,7 +43,7 @@ describe('reportRedisConnectionEvents', () => {
   let client
 
   beforeAll(() => {
-    vi.useFakeTimers({ toFake: ['setInterval'] })
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
   })
 
   afterAll(() => {
@@ -50,6 +51,7 @@ describe('reportRedisConnectionEvents', () => {
   })
 
   beforeEach(() => {
+    forgetRecordedDependencyAvailability()
     client = new EventEmitter()
     reportRedisConnectionEvents(client)
   })

@@ -16,7 +16,7 @@ import {
   expectOneSaveFallbackLogged,
   getHandlerOf,
   postHandlerOf,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import {
@@ -60,7 +60,7 @@ describe('POST additional-details — backend unavailable', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render at 500 with the unweaned question still asked and log the save fallback once', async () => {
-    const failure = unavailableBackendError('save answers')
+    const failure = loggedBackendRefusal('save answers')
 
     const result = await driveHandler(post, {
       seed: { commodityLines: [BOS_TAURUS_ROW] },

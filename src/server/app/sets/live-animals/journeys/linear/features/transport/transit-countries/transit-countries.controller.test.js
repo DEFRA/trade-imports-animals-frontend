@@ -10,7 +10,7 @@ import {
   expectOneRefusalLogged,
   expectOneSaveFallbackLogged,
   postHandlerOf,
-  unavailableBackendError,
+  loggedBackendRefusal,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import {
@@ -400,7 +400,7 @@ describe('POST transit-countries — continuing', () => {
     const result = await driveHandler(post, {
       seed,
       payload: { transitedCountries: ['FR'] },
-      startingFrom: [refusingSaves(unavailableBackendError(SAVE_ANSWERS))]
+      startingFrom: [refusingSaves(loggedBackendRefusal(SAVE_ANSWERS))]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -408,7 +408,7 @@ describe('POST transit-countries — continuing', () => {
   })
 
   it('Should log the save fallback once at info with the journey id and no error', async () => {
-    const failure = unavailableBackendError(SAVE_ANSWERS)
+    const failure = loggedBackendRefusal(SAVE_ANSWERS)
 
     const result = await driveHandler(post, {
       seed,
@@ -671,7 +671,7 @@ describe('transit-countries — when the page is out of scope for the means of t
       const result = await driveHandler(post, {
         seed: airSeed,
         payload,
-        startingFrom: [refusingSaves(unavailableBackendError(SAVE_ANSWERS))]
+        startingFrom: [refusingSaves(loggedBackendRefusal(SAVE_ANSWERS))]
       })
 
       expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
