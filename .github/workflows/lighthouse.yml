@@ -194,7 +194,41 @@ jobs:
           name: lighthouse-report
           path: lighthouse-report/
 
+      # The E2E report publish pushes to gh-pages from its own concurrency
+      # group, so a push here can be refused as not a fast-forward. Each
+      # attempt clones gh-pages afresh and lays this report on whatever landed
+      # first. Every report has its own folder, so nothing clashes.
       - name: Deploy Lighthouse report to GitHub Pages
+        id: deploy
+        continue-on-error: true
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./lighthouse-report
+          destination_dir: lighthouse/${{ needs.lighthouse-test.outputs.tag }}
+          keep_files: false
+
+      - name: Wait before the second attempt
+        if: steps.deploy.outcome == 'failure'
+        run: sleep $((10 + RANDOM % 20))
+
+      - name: Deploy Lighthouse report to GitHub Pages (second attempt)
+        id: deploy-again
+        if: steps.deploy.outcome == 'failure'
+        continue-on-error: true
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./lighthouse-report
+          destination_dir: lighthouse/${{ needs.lighthouse-test.outputs.tag }}
+          keep_files: false
+
+      - name: Wait before the last attempt
+        if: steps.deploy-again.outcome == 'failure'
+        run: sleep $((20 + RANDOM % 40))
+
+      - name: Deploy Lighthouse report to GitHub Pages (last attempt)
+        if: steps.deploy-again.outcome == 'failure'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
