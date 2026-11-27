@@ -1,25 +1,20 @@
 import hapi from '@hapi/hapi'
-import { Writable } from 'node:stream'
-import { pino } from 'pino'
 
-import { createBackendFetch } from './backend-fetch.js'
+import { backendFetch } from './backend-fetch.js'
 import { callCounts } from '../call-counts/call-counts.js'
 import { callCountsRoutes } from '../call-counts/call-counts-routes.js'
 import { clearCallCountTotals } from '../call-counts/call-count-totals.js'
 import { recordEmfDocuments } from '../../test-helpers/emf-documents.js'
 import {
+  ECS_PLATFORM_FIELDS,
+  recordEcsLogLines
+} from '../../test-helpers/ecs-log-lines.js'
+import {
   fetchMock,
   resetMocksAndConfigAfterTests
 } from '../../../app/engine/test-support.js'
 
-const loggedLines = []
-const logDestination = new Writable({
-  write(chunk, _encoding, done) {
-    loggedLines.push(JSON.parse(chunk))
-    done()
-  }
-})
-const backendFetch = createBackendFetch(pino({ level: 'warn' }, logDestination))
+const ecsLog = recordEcsLogLines()
 
 const OPERATION = 'replace-notification'
 const BACKEND_URL = 'http://backend.test/notifications/j-1'
@@ -46,7 +41,6 @@ const backendAnswered = (status = 200) => new Response(null, { status })
 resetMocksAndConfigAfterTests()
 
 beforeEach(() => {
-  loggedLines.length = 0
   fetchMock.enableMocks()
 })
 
@@ -115,22 +109,24 @@ describe('backendFetch', () => {
       )
     })
 
-    test('logs one warning with the failed connection, the method and the URL', async () => {
+    test('logs one warning with the failed connection and the operation in its message, and no other field', async () => {
       fetchMock.mockRejectOnce(connectTimedOut())
 
       await backendFetch(OPERATION, BACKEND_URL, INIT)
 
-      expect(loggedLines).toEqual([
-        expect.objectContaining({
-          level: pino.levels.values.warn,
-          msg: 'Backend connection did not open, retrying once',
-          method: 'PUT',
-          url: BACKEND_URL,
-          err: expect.objectContaining({
+      expect(ecsLog.linesBesideExternalCalls()).toEqual([
+        {
+          ...ECS_PLATFORM_FIELDS,
+          'log.level': 'warn',
+          message:
+            'Backend connection for replace-notification did not open, retrying once',
+          error: {
             type: 'TypeError',
-            message: 'fetch failed: UND_ERR_CONNECT_TIMEOUT'
-          })
-        })
+            message: 'fetch failed',
+            code: 'UND_ERR_CONNECT_TIMEOUT',
+            stack_trace: expect.stringMatching(/^TypeError: fetch failed/)
+          }
+        }
       ])
     })
 
@@ -326,8 +322,11 @@ describe('backendFetch on a socket failure', () => {
       await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).rejects.toBe(
         socketFailed
       )
-      expect({ warnings: loggedLines, fetches: fetchMock.mock.calls }).toEqual({
-        warnings: [],
+      expect({
+        lines: ecsLog.linesBesideExternalCalls(),
+        fetches: fetchMock.mock.calls
+      }).toEqual({
+        lines: [],
         fetches: [expect.anything()]
       })
     }

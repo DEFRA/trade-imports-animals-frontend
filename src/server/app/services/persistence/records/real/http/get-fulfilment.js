@@ -1,6 +1,7 @@
 import { statusCodes } from '../../../../../../common/constants/status-codes.js'
 import { currentOrganisationId } from '../../../../../../common/helpers/organisation-id.js'
 import { notificationsUrl } from '../config.js'
+import { journeyReferenceFields } from '../journey-reference-fields.js'
 import { refuseUnlessOk, requestBackend } from './send.js'
 import { logger } from '../logger.js'
 
@@ -16,12 +17,8 @@ export const getFulfilment = async (journeyId) => {
   }
   if (response.status === statusCodes.forbidden) {
     logger.warn(
-      {
-        journeyId,
-        organisationId: currentOrganisationId(),
-        status: response.status
-      },
-      'Backend refused fulfilment read'
+      journeyReferenceFields(journeyId),
+      `Backend refused fulfilment read for organisation ${currentOrganisationId()}: ${response.status}`
     )
     return undefined
   }
