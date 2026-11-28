@@ -53,7 +53,7 @@ describe('#viewHeader', () => {
     expect(viewHeader(submittedJourney()).actions).toEqual({
       amend: {
         text: 'Amend this notification',
-        postAction: pagePath(REFERENCE, 'amend')
+        href: pagePath(REFERENCE, 'amend')
       },
       copy: {
         text: 'Copy as new',

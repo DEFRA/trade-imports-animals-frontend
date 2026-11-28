@@ -31,12 +31,13 @@ import {
   authenticatedCredentials,
   backendJourneyId,
   backendNotification,
+  completeNotification,
   journeyRequest,
   recordingH
 } from './test-support.js'
 import { obligationSet } from '../model/obligations/manifest.js'
 
-const { countryOfOrigin } = obligationSet()
+const { countryOfOrigin, carriedOnCopy } = obligationSet()
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
@@ -194,32 +195,40 @@ describe('#amendJourney', () => {
     expect(h.cookies[knownJourneysCookie()]).toEqual([journeyId])
   })
 
-  it('Should refuse a deleted notification, leave it deleted and log the refusal once with its status', async () => {
-    const journey = await store.create()
-    await recordsStub.softDelete(journey.journeyId)
-    const request = journeyRequest(journey.journeyId, {
-      knownJourneyIds: [journey.journeyId]
-    })
+  const expectAmendRefusedWithStatus = async (journeyId, status) => {
+    const request = journeyRequest(journeyId, { knownJourneyIds: [journeyId] })
 
-    const editable = await amendJourney(
-      request,
-      recordingH(),
-      journey.journeyId
-    )
+    const editable = await amendJourney(request, recordingH(), journeyId)
 
     expect(editable).toBeUndefined()
-    expect((await store.get(journey.journeyId)).status).toBe('deleted')
+    expect((await store.get(journeyId)).status).toBe(status)
     expect(request.logger.entries).toEqual([
       {
         level: 'info',
-        fields: {
-          journeyId: journey.journeyId,
-          reason: 'not-editable',
-          status: 'deleted'
-        },
+        fields: { journeyId, reason: 'not-editable', status },
         message: 'Amend refused'
       }
     ])
+  }
+
+  it('Should refuse a deleted notification, leave it deleted and log the refusal once with its status', async () => {
+    const journey = await store.create()
+    await recordsStub.softDelete(journey.journeyId)
+
+    await expectAmendRefusedWithStatus(journey.journeyId, 'deleted')
+  })
+
+  it('Should refuse a draft notification, leave it draft and log the refusal once with its status', async () => {
+    const journey = await store.create()
+
+    await expectAmendRefusedWithStatus(journey.journeyId, 'draft')
+  })
+
+  it('Should refuse a notification already being amended, leave it in Amend and log the refusal once with its status', async () => {
+    const journeyId = await submittedJourney()
+    await recordsStub.amend(journeyId)
+
+    await expectAmendRefusedWithStatus(journeyId, 'amend')
   })
 })
 
@@ -290,6 +299,144 @@ describe('#copyJourney', () => {
         message: 'Copy refused'
       }
     ])
+  })
+
+  it('Should hold only the carried trade answers after copying a fully answered submitted notification', async () => {
+    const source = await store.create()
+    await store.seedAnswers(source.journeyId, completeNotification())
+    await store.submit(source.journeyId)
+
+    const copied = await copyJourney(
+      journeyRequest(source.journeyId, { knownJourneyIds: [] }),
+      recordingH(),
+      source.journeyId,
+      'copy-key-full'
+    )
+
+    const loaded = await store.get(copied.journeyId)
+    const complete = completeNotification()
+    const expectedCarriedIds = carriedOnCopy.filter((name) => name in complete)
+
+    expect(Object.keys(loaded.answers).sort()).toEqual(
+      expectedCarriedIds.sort()
+    )
+    expect(loaded.answers.countryOfOrigin).toBe(complete.countryOfOrigin)
+    expect(loaded.answers.regionOfOriginCodeRequirement).toBe(
+      complete.regionOfOriginCodeRequirement
+    )
+    expect(loaded.answers.regionOfOriginCode).toBe(complete.regionOfOriginCode)
+    expect(loaded.answers.internalReferenceNumber).toBe(
+      complete.internalReferenceNumber
+    )
+    expect(loaded.answers.reasonForImport).toBe(complete.reasonForImport)
+    expect(loaded.answers.purposeInInternalMarket).toBe(
+      complete.purposeInInternalMarket
+    )
+    expect(loaded.answers.containsUnweanedAnimals).toBe(
+      complete.containsUnweanedAnimals
+    )
+    expect(loaded.answers.animalsCertifiedFor).toBe(
+      complete.animalsCertifiedFor
+    )
+    expect(loaded.answers.countyParishHoldingCph).toBe(
+      complete.countyParishHoldingCph
+    )
+    expect(loaded.answers.consignor).toEqual(complete.consignor)
+    expect(loaded.answers.consignee).toEqual(complete.consignee)
+    expect(loaded.answers.importer).toEqual(complete.importer)
+    expect(loaded.answers.placeOfOrigin).toEqual(complete.placeOfOrigin)
+    expect(loaded.answers.placeOfDestination).toEqual(
+      complete.placeOfDestination
+    )
+    expect(loaded.answers.commodityLines).toEqual([
+      {
+        commodityCode: complete.commodityLines[0].commodityCode,
+        speciesLatinName: complete.commodityLines[0].speciesLatinName,
+        speciesCommonName: complete.commodityLines[0].speciesCommonName
+      }
+    ])
+  })
+})
+
+describe('#copyJourney against the backend', () => {
+  beforeEach(() => {
+    configureRecords(SET_ID, recordsReal)
+    configureSession(SET_ID, sessionStub)
+    fetchMocker.resetMocks()
+  })
+
+  const COPY_FULFILMENTS_AND_PUT_REQUESTS = [
+    {
+      method: 'GET',
+      url: `${notificationsUrl}/${backendJourneyId}/fulfilments`
+    },
+    {
+      method: 'POST',
+      url: `${notificationsUrl}/${backendJourneyId}/copy?concurrencyToken=7`
+    },
+    { method: 'PUT', url: `${notificationsUrl}/${backendJourneyId}` }
+  ]
+
+  const requestsSent = () =>
+    fetchMocker.requests().map(({ method, url }) => ({ method, url }))
+
+  const attemptCopy = (request) =>
+    actWithSessionOrganisation(request, async () =>
+      copyJourney(request, recordingH(), backendJourneyId, 7)
+    )
+
+  it('Should remove the copy and rethrow when the carried-answers write fails', async () => {
+    fetchMocker.mockResponses(
+      [backendNotification(), { status: 200 }],
+      [backendNotification(), { status: 200 }],
+      ['Service unavailable', { status: 503 }],
+      [backendNotification({ status: 'DELETED' }), { status: 200 }]
+    )
+    const request = journeyRequest(backendJourneyId, {
+      knownJourneyIds: [backendJourneyId]
+    })
+
+    await expect(attemptCopy(request)).rejects.toThrow()
+
+    expect(requestsSent()).toEqual([
+      ...COPY_FULFILMENTS_AND_PUT_REQUESTS,
+      {
+        method: 'POST',
+        url: `${notificationsUrl}/${backendJourneyId}/soft-delete`
+      }
+    ])
+    expect(request.logger.entries).toEqual([
+      {
+        level: 'warn',
+        fields: {
+          sourceJourneyId: backendJourneyId,
+          copyJourneyId: backendJourneyId,
+          err: expect.any(Error)
+        },
+        message:
+          'Copying notification failed to carry its answers — removing the copy'
+      }
+    ])
+  })
+
+  it('Should keep the copy drafted when registering it in the session fails', async () => {
+    fetchMocker.mockResponses(
+      [backendNotification(), { status: 200 }],
+      [backendNotification(), { status: 200 }],
+      [backendNotification(), { status: 200 }]
+    )
+    const sessionWriteError = new Error('session write failed')
+    const addKnownJourney = vi
+      .spyOn(sessionStub, 'addKnownJourney')
+      .mockRejectedValueOnce(sessionWriteError)
+    const request = journeyRequest(backendJourneyId, {
+      knownJourneyIds: [backendJourneyId]
+    })
+
+    await expect(attemptCopy(request)).rejects.toThrow(sessionWriteError)
+
+    expect(requestsSent()).toEqual(COPY_FULFILMENTS_AND_PUT_REQUESTS)
+    addKnownJourney.mockRestore()
   })
 })
 
@@ -421,11 +568,6 @@ describe('backend requests carry the authenticated actor', () => {
       `${notificationsUrl}/${backendJourneyId}/cancel-amend`
     ],
     [
-      'copy',
-      (request, h) => copyJourney(request, h, backendJourneyId, 7),
-      `${notificationsUrl}/${backendJourneyId}/copy?concurrencyToken=7`
-    ],
-    [
       'soft-delete',
       (request, h) => softDeleteJourney(request, h, backendJourneyId),
       `${notificationsUrl}/${backendJourneyId}/soft-delete`
@@ -445,6 +587,23 @@ describe('backend requests carry the authenticated actor', () => {
       expect(await jsonOf(lastRequest)).toEqual(authenticatedActor)
     }
   )
+
+  it('Should send the authenticated actor as the body of the copy request', async () => {
+    fetchMocker.mockResponse(backendNotification())
+    const request = journeyRequest(backendJourneyId, {
+      knownJourneyIds: [backendJourneyId]
+    })
+
+    await actWithSessionOrganisation(request, async () =>
+      copyJourney(request, recordingH(), backendJourneyId, 7)
+    )
+
+    const [, copyRequest] = fetchMocker.requests()
+    expect(copyRequest.url).toBe(
+      `${notificationsUrl}/${backendJourneyId}/copy?concurrencyToken=7`
+    )
+    expect(await jsonOf(copyRequest)).toEqual(authenticatedActor)
+  })
 })
 
 describe('#replaceJourneyFulfilment', () => {

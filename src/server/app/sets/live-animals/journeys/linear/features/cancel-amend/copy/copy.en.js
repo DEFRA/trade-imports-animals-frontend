@@ -1,6 +1,5 @@
 export const copy = {
-  title: 'Cancel this amendment?',
-  body: 'Your changes since you started amending will be discarded and the submitted version restored.',
+  title: 'Are you sure you want to cancel this amendment?',
   confirmButton: 'Yes, cancel amendment',
-  noLink: 'No, return to notification'
+  goBackLink: 'Go back'
 }

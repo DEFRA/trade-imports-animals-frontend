@@ -30,8 +30,10 @@ import { commodityLabel } from '../src/server/app/sets/live-animals/journeys/lin
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as additionalDetailsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.en.js'
 import { copy as addressesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.en.js'
+import { copy as amendCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/amend/copy/copy.en.js'
 import { copy as checkAnswersCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
+import { copy as dashboardCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/dashboard/copy/copy.en.js'
 import { copy as documentsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.en.js'
 import { copy as hubCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.en.js'
 import { copy as importReasonCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/import-reason/copy/copy.en.js'
@@ -61,7 +63,8 @@ export {
   MUSTELA_PUTORIUS_FURO_ROW,
   OVIS_ARIES_ROW,
   STRUTHIO_ROW,
-  SUS_SCROFA_DOMESTICUS_ROW
+  SUS_SCROFA_DOMESTICUS_ROW,
+  labelFor
 }
 
 const isGovukConditionalRevealFalsePositive = (violation) =>
@@ -733,6 +736,16 @@ const startNotificationWithOriginAnswered = async (page) => {
  */
 export const expectOverview = (page) =>
   expect(page.getByRole('heading', { name: hubCopy.title })).toBeVisible()
+
+export const expectNotificationListOpen = (page) =>
+  expect(
+    page.getByRole('heading', { name: dashboardCopy.notificationsHeading })
+  ).toBeVisible()
+
+export const taskRow = (page, title) =>
+  page.getByRole('listitem').filter({
+    has: page.getByText(title, { exact: true })
+  })
 
 /**
  * Opens the notification's overview, then follows the link in the row titled
@@ -1652,6 +1665,21 @@ export const openReviewFromHub = async (page) => {
   )
 }
 
+export const createAnsweredNotification = async (page) => {
+  await startNotification(page)
+  await completeAnswerSections(page)
+  const sourceReference = journeyIdFromPage(page)
+  await page.goto(BASE)
+  return sourceReference
+}
+
+export const copyNotification = (page, sourceReference) =>
+  page
+    .getByRole('button', {
+      name: `${sharedAppCopy.notificationActions.copy.text} ${dashboardCopy.actionHidden(sourceReference)}`
+    })
+    .click()
+
 const uploadItahc = async (page) => {
   const itahc = documentNamed('GBHC0000000001', 'itahc.pdf')
   await openFromOverviewRow(page, hubCopy.rows.documents.title)
@@ -1693,8 +1721,12 @@ export const submitCompleteNotification = async (
 export const amendFromList = async (page, reference) => {
   await page.goto(BASE)
   await page
-    .getByRole('button', { name: `Amend notification ${reference}` })
+    .getByRole('link', { name: `Amend notification ${reference}` })
     .click()
+  await expect(
+    page.getByRole('heading', { name: amendCopy.title, level: 1 })
+  ).toBeVisible()
+  await page.getByRole('button', { name: amendCopy.confirmButton }).click()
 }
 
 /**

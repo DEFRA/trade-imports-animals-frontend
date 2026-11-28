@@ -36,11 +36,6 @@
     <h1 class="govuk-heading-l govuk-!-display-inline-block govuk-!-margin-right-3">{{ viewHeader.reference }}</h1>
     {{ govukTag({ text: viewHeader.status.text, classes: viewHeader.status.classes }) }}
 
-    {% if viewHeader.actions.amend %}
-      <form id="view-header-amend" method="post" action="{{ viewHeader.actions.amend.postAction }}" novalidate>
-        <input type="hidden" name="crumb" value="{{ crumb }}" />
-      </form>
-    {% endif %}
     <form id="view-header-copy" method="post" action="{{ viewHeader.actions.copy.postAction }}" novalidate>
       <input type="hidden" name="crumb" value="{{ crumb }}" />
       <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
@@ -49,10 +44,7 @@
 
     <div class="govuk-button-group">
       {% if viewHeader.actions.amend %}
-        {{ govukButton({
-          text: viewHeader.actions.amend.text,
-          attributes: { form: "view-header-amend" }
-        }) }}
+        {{ govukButton(viewHeader.actions.amend) }}
       {% endif %}
       {{ govukButton({
         text: viewHeader.actions.copy.text,

@@ -4,11 +4,6 @@ export const copy = {
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
   change: 'Change',
-  cancelAmend: {
-    successTitle: 'Success',
-    successBody:
-      'The amendment has been cancelled and the submitted version restored.'
-  },
   sections: {
     aboutTheConsignment: '1. About the consignment',
     descriptionOfTheGoods: '2. Description of the goods',

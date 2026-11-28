@@ -210,7 +210,10 @@ service's standard page not found (404), on every page, the review included,
 before any page runs, and is sent nothing to the origin page or the notification
 list. The origin page and its children, and the amend, cancel-amend, copy and
 delete actions, are exempt from the guard, so there is no redirect loop. An
-exempt path's own page answers not found the same way.
+exempt path's own page usually answers not found the same way. Of the exempt
+actions, cancel-amend and delete answer a reference they cannot find with the
+same standard page not found; the amend page and the copy post open the
+dashboard's notification list instead.
 
 A journey the guard bounces to the origin page carries no trail, so the origin page's
 Back is the dashboard until an answer is entered. The guard sends the request on to
@@ -289,8 +292,8 @@ Some pages carry no caption on purpose:
 
 - The overview, check your answers, declaration and
   confirmation pages open straight into their heading.
-- Delete notification and cancel amend are interruptions, not steps in a
-  section.
+- Delete notification, cancel amend and the amend confirmation page are
+  interruptions, not steps in a section.
 - The address pickers get their caption from the addresses feature.
 
 The generic algorithms are documented in [Flow machinery and gates](../../../docs/flow-and-gates.md).

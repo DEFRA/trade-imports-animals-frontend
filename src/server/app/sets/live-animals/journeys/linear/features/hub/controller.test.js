@@ -8,6 +8,7 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import {
+  seedFromFranceWithCommodityLineOfAnimals,
   seedFromFranceWithOneEarTaggedCattle,
   withOriginSaved
 } from '../../../../test-support.js'
@@ -87,6 +88,46 @@ describe('#handler — stored-answer validity demotes the hub tag', () => {
         })
       )
     ).toBe(TO_DO)
+  })
+})
+
+describe('#handler — the packages total follows whether any commodity line answers it', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should read both totals as 0 when the notification holds no commodity line', async () => {
+    const result = await driveHandler(getHandler, {})
+
+    expect(result.view.context.commodityTotals).toEqual({
+      animals: 0,
+      packages: 0
+    })
+  })
+
+  it('Should sum the packages total when at least one line holds a number of packages', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: withOriginSaved({
+        commodityLines: [
+          lineOf(BOS_TAURUS_ROW, {
+            numberOfAnimalsQuantity: '3',
+            numberOfPackages: '2'
+          })
+        ]
+      })
+    })
+
+    expect(result.view.context.commodityTotals).toEqual({
+      animals: 3,
+      packages: 2
+    })
+  })
+
+  it('Should leave the packages total absent, and the animals total a figure, when the line holds no number of packages', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: seedFromFranceWithCommodityLineOfAnimals(4)
+    })
+
+    expect(result.view.context.commodityTotals.animals).toBe(4)
+    expect(result.view.context.commodityTotals.packages).toBeUndefined()
   })
 })
 

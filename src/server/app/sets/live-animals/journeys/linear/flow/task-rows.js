@@ -11,7 +11,10 @@ import {
   commoditiesPage,
   consignmentDetailsPage
 } from '../features/commodities/page.js'
-import { hasAnyCommodityLine } from '../features/commodities/lines.js'
+import {
+  everyIdentifyingLineHasAnimalCount,
+  hasAnyCommodityLine
+} from '../features/commodities/lines.js'
 import { everyAddressableAnimalHasPermanentAddress } from '../features/permanent-address/cards.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
@@ -56,7 +59,8 @@ export const taskRows = [
     pages: [animalIdentificationPage],
     parts: [{ collection: 'commodityLines', only: ['animalIdentifiers'] }],
     conditional: true,
-    applies: hasAnyCommodityLine
+    applies: hasAnyCommodityLine,
+    extraAnswerGiven: everyIdentifyingLineHasAnimalCount
   },
   { id: 'additionalDetails', pages: [additionalDetailsPage] },
   { id: 'arrivalDetails', pages: [portOfEntryPage] },

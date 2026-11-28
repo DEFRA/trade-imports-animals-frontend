@@ -11,7 +11,9 @@ defines lifecycle constants and delegates these operations to a configured adapt
 - create, load, list and has
 - replace fulfilment
 - submit, amend and cancel amend
-- copy and soft delete
+- copy and soft delete — copy returns a copy of the notification's submitted
+  version: the snapshot taken when an amendment opened, or the notification's
+  own answers otherwise. Each adapter proves this post-condition for itself.
 - clear for test support
 
 [`src/server/app/services/persistence/records/index.js`](../services/persistence/records/index.js)
@@ -78,9 +80,12 @@ implements create, amend, cancel-amend, copy and soft-delete orchestration.
 
 Viewing and amending a notification load it from the records port and add it to
 the session's known journey ids, so a notification submitted in an earlier browser
-session can be amended from the dashboard. Copying checks that the notification
-exists (`records.has`), then registers the new copy's id, not the original's.
-Cancel-amend and soft-delete act only on known journey ids.
+session can be amended from the dashboard. Copying loads the source
+notification (`records.load`), then replaces the copy's answers with the
+carried subset of the source's before registering the new copy's id, not the
+original's. A failed carried-answers write puts the request's journey memo
+back to the source, soft-deletes the copy and rethrows, leaving no copy
+behind. Cancel-amend and soft-delete act only on known journey ids.
 
 A save replaces the memo with the result it returns, so the next save in the
 same request sends the concurrency token the backend returned.

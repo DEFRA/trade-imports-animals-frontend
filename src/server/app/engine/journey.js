@@ -5,8 +5,9 @@ import {
   sessionConfiguredFor
 } from './persistence/session.js'
 import { currentSetBase, currentSetId } from '../shared/set-context.js'
-import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
+import { records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
+import { carriedFulfilmentsFrom } from '../bridge/carried-answers.js'
 
 /**
  * Registers the active set's journey cookies on the server, scoped to the
@@ -133,17 +134,7 @@ export const listKnownJourneys = async (
 export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
-const editableFromStatus = async (journey, journeyId, actor) => {
-  if (journey.status === SUBMITTED) {
-    return records.amend(journeyId, actor)
-  }
-  if (journey.status === DRAFT || journey.status === AMEND) {
-    return journey
-  }
-  return undefined
-}
-
-export const amendJourney = async (request, h, journeyId) => {
+export const amendableJourney = async (request, h, journeyId) => {
   const journey = await loadAndRememberJourney(request, h, journeyId)
   if (!journey) {
     logJourneyActionRefused(request, {
@@ -153,9 +144,7 @@ export const amendJourney = async (request, h, journeyId) => {
     })
     return undefined
   }
-  const actor = buildActor(request.auth.credentials)
-  const editable = await editableFromStatus(journey, journeyId, actor)
-  if (!editable) {
+  if (journey.status !== SUBMITTED) {
     logJourneyActionRefused(request, {
       action: 'Amend',
       journeyId,
@@ -164,6 +153,16 @@ export const amendJourney = async (request, h, journeyId) => {
     })
     return undefined
   }
+  return journey
+}
+
+export const amendJourney = async (request, h, journeyId) => {
+  const journey = await amendableJourney(request, h, journeyId)
+  if (!journey) {
+    return undefined
+  }
+  const actor = buildActor(request.auth.credentials)
+  const editable = await records.amend(journeyId, actor)
   memoWrite(request, editable)
   return editable
 }
@@ -178,8 +177,52 @@ export const cancelAmendJourney = async (request, _h, journeyId) => {
   return restored
 }
 
+const logCopyCarryFailed = (
+  request,
+  { sourceJourneyId, copyJourneyId, err }
+) => {
+  request.logger.warn(
+    { sourceJourneyId, copyJourneyId, err },
+    'Copying notification failed to carry its answers — removing the copy'
+  )
+}
+
+const logCopyRemovalFailed = (
+  request,
+  { sourceJourneyId, copyJourneyId, err }
+) => {
+  request.logger.warn(
+    { sourceJourneyId, copyJourneyId, err },
+    'Removing a copy whose carried-answers write failed also failed'
+  )
+}
+
+const removeCopyLeftByFailedCarry = async (
+  request,
+  actor,
+  sourceJourneyId,
+  copyJourneyId,
+  carryError
+) => {
+  logCopyCarryFailed(request, {
+    sourceJourneyId,
+    copyJourneyId,
+    err: carryError
+  })
+  try {
+    await records.softDelete(copyJourneyId, actor)
+  } catch (softDeleteError) {
+    logCopyRemovalFailed(request, {
+      sourceJourneyId,
+      copyJourneyId,
+      err: softDeleteError
+    })
+  }
+}
+
 export const copyJourney = async (request, h, journeyId, concurrencyToken) => {
-  if (!(await records.has(journeyId))) {
+  const source = await records.load({ journeyId })
+  if (!source) {
     logJourneyActionRefused(request, {
       action: 'Copy',
       journeyId,
@@ -189,9 +232,27 @@ export const copyJourney = async (request, h, journeyId, concurrencyToken) => {
   }
   const actor = buildActor(request.auth.credentials)
   const copied = await records.copy(journeyId, concurrencyToken, actor)
-  await session.addKnownJourney(request, h, copied.journeyId)
   memoWrite(request, copied)
-  return copied
+  let saved
+  try {
+    saved = await replaceJourneyFulfilment(
+      request,
+      copied.journeyId,
+      carriedFulfilmentsFrom(copied.fulfilment)
+    )
+  } catch (error) {
+    await removeCopyLeftByFailedCarry(
+      request,
+      actor,
+      journeyId,
+      copied.journeyId,
+      error
+    )
+    memoWrite(request, source)
+    throw error
+  }
+  await session.addKnownJourney(request, h, copied.journeyId)
+  return saved
 }
 
 export const softDeleteJourney = async (request, _h, journeyId) => {

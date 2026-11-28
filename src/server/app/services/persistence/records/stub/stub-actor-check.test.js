@@ -52,7 +52,7 @@ describe('stub lifecycle without an actor', () => {
     const journeyId = await seedSubmittedWithParty()
 
     await expect(
-      records.copy(journeyId, 'idempotency-key')
+      records.copy(journeyId, 'concurrency-token')
     ).resolves.toBeDefined()
   })
 })

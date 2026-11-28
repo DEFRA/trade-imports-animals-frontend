@@ -18,26 +18,24 @@ const { CANCEL_AMEND_SLUG } = kit
 const view = `${TEMPLATES}/features/cancel-amend/template`
 const copy = copyFor({ en, cy })
 
+export const CANCEL_AMEND_REFUSAL = Object.freeze({
+  notInAmend: 'not-in-amend'
+})
+
 const cyaPath = (journeyId) => pagePath(journeyId, kit.CYA_SLUG)
 const cancelPath = (journeyId) => pagePath(journeyId, CANCEL_AMEND_SLUG)
-
-const nonAmendTarget = (journey) =>
-  journey.status === state.SUBMITTED
-    ? cyaPath(journey.journeyId)
-    : dashboardPath()
 
 const render = (h, journey, { recoverableError = false } = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: cyaPath(journey.journeyId),
       journey,
       recoverableError,
-      offerCancelAmend: false
+      showJourneyStrip: false
     }),
     heading: copy.title,
     copy,
     cancelAction: cancelPath(journey.journeyId),
-    noHref: cyaPath(journey.journeyId)
+    goBackHref: cyaPath(journey.journeyId)
   })
 
 const redirectNotInAmend = (request, h, journey) => {
@@ -45,11 +43,11 @@ const redirectNotInAmend = (request, h, journey) => {
     {
       journeyId: journey.journeyId,
       status: journey.status,
-      refusal: 'not-in-amend'
+      refusal: CANCEL_AMEND_REFUSAL.notInAmend
     },
     'Cancel amend refused'
   )
-  return h.redirect(nonAmendTarget(journey))
+  return h.redirect(dashboardPath())
 }
 
 const get = async (request, h) => {

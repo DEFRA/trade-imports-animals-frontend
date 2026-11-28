@@ -20,8 +20,8 @@ export const create = async () => {
   return structuredClone(marshal(document))
 }
 
-export const copy = async (journeyId, idempotencyKey, _actor) => {
-  const dedupeKey = `${journeyId}\u0000${idempotencyKey}`
+export const copy = async (journeyId, concurrencyToken, _actor) => {
+  const dedupeKey = `${journeyId}\u0000${concurrencyToken}`
   const inSet = journeys()
   const copies = copiesBySourceAndKey()
   const existingCopyId = copies.get(dedupeKey)
@@ -40,12 +40,16 @@ export const copy = async (journeyId, idempotencyKey, _actor) => {
   ) {
     throw new Error(`Journey "${journeyId}" is ${source.status} — cannot copy`)
   }
+  const submittedFulfilment =
+    source.status === AMEND
+      ? source.submittedSnapshot.fulfilment
+      : source.fulfilment
   const document = {
     id: mintReferenceNumber(),
     status: DRAFT,
     createdAt: new Date().toISOString(),
     submittedAt: null,
-    fulfilment: structuredClone(source.fulfilment),
+    fulfilment: structuredClone(submittedFulfilment),
     answersDifferFromSubmitted: false
   }
   inSet.set(document.id, document)

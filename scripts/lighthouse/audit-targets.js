@@ -57,6 +57,7 @@ export const SKIPPED = new Map([
 /** Routes audited on a seeded notification other than the draft, keyed to the
  * seeded shape each one needs. */
 export const FILLED_BY = new Map([
+  ['/notifications/{journeyId}/amend', 'submitted'],
   ['/notifications/{journeyId}/confirmation', 'submitted'],
   ['/notifications/{journeyId}/transporters/add/private', 'transit']
 ])

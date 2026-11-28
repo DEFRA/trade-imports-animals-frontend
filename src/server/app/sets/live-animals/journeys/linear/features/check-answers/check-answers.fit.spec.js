@@ -62,6 +62,7 @@ import {
   values,
   withoutJavaScript
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { copy as amendCopy } from '../amend/copy/copy.en.js'
 import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as hubCopy } from '../hub/copy/copy.en.js'
@@ -100,6 +101,11 @@ const headerButtonGroup = (page) =>
   main(page).locator('.govuk-button-group').first()
 
 const headerControls = (page) => formControls(headerButtonGroup(page))
+
+const clickCopyAsNew = (page) =>
+  headerControls(page)
+    .getByText(sharedCopy.notificationActions.copy.text, { exact: true })
+    .click()
 
 const headerFormSubmittedBy = (page, buttonName) =>
   formSubmittedBy(
@@ -1136,9 +1142,7 @@ test.describe('check-answers feature draft notification reached from Review and 
   }) => {
     const reference = journeyIdFromPage(page)
 
-    await headerControls(page)
-      .getByText(sharedCopy.notificationActions.copy.text, { exact: true })
-      .click()
+    await clickCopyAsNew(page)
 
     await expectOverview(page)
     expect(journeyIdFromPage(page)).not.toBe(reference)
@@ -1311,18 +1315,20 @@ test.describe('check-answers feature submitted notification', () => {
     ).toHaveCount(0)
   })
 
-  test('posts Amend this notification from a form of its own holding only the crumb, and Copy as new from another', async ({
+  test('offers Amend this notification as a control to the amend address, Copy as new from a form of its own holding only the crumb, the concurrency token and the copy origin, and Delete as a control to the delete address, with no form holding more than one action', async ({
     page
   }) => {
-    const amend = await headerFormSubmittedBy(page, copy.viewHeader.amend)
     const copyAsNew = await headerFormSubmittedBy(
       page,
       sharedCopy.notificationActions.copy.text
     )
 
-    await expect(amend.form).toHaveAttribute('action', /\/amend$/)
-    expect(await fieldNamesOf(amend.form)).toEqual(['crumb'])
-    await expect(amend.submitButtons).toHaveText([copy.viewHeader.amend])
+    await expect(
+      headerButtonGroup(page).getByRole('button', {
+        name: copy.viewHeader.amend,
+        exact: true
+      })
+    ).toHaveAttribute('href', /\/amend$/)
     await expect(copyAsNew.form).toHaveAttribute('action', /\/copy$/)
     expect(await fieldNamesOf(copyAsNew.form)).toEqual([
       'crumb',
@@ -1338,24 +1344,39 @@ test.describe('check-answers feature submitted notification', () => {
         exact: true
       })
     ).toHaveAttribute('href', /\/delete$/)
+    await expect(main(page).locator('form')).toHaveCount(1)
   })
 
-  test('Amend this notification opens the amendment review', async ({
+  test('Amend this notification opens the amend confirmation page, and confirming there opens the amendment review showing it being amended', async ({
     page
   }) => {
-    await page.getByRole('button', { name: copy.viewHeader.amend }).click()
+    await page
+      .getByRole('button', { name: copy.viewHeader.amend, exact: true })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: amendCopy.title, level: 1 })
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: amendCopy.confirmButton }).click()
 
     await expect(
       journeyStripStatus(page, sharedCopy.journeyStrip.amend)
     ).toBeVisible()
   })
 
-  test('Amend this notification opens the amendment review when JavaScript is off', async ({
+  test('Amend this notification opens the amend confirmation page, and confirming there opens the amendment review, when JavaScript is off', async ({
     page,
     browser
   }) => {
     await withoutJavaScript(page, browser, async (noJs) => {
-      await noJs.getByRole('button', { name: copy.viewHeader.amend }).click()
+      await noJs
+        .getByRole('button', { name: copy.viewHeader.amend, exact: true })
+        .click()
+      await expect(
+        noJs.getByRole('heading', { name: amendCopy.title, level: 1 })
+      ).toBeVisible()
+
+      await noJs.getByRole('button', { name: amendCopy.confirmButton }).click()
 
       await expect(
         journeyStripStatus(noJs, sharedCopy.journeyStrip.amend)
@@ -1613,5 +1634,27 @@ test.describe('check-answers feature amendment review after a cancelled amendmen
       page.getByRole('heading', { level: 1, name: copy.title })
     ).toBeVisible()
     await expect(page).toHaveTitle(new RegExp(`^${copy.title}`))
+  })
+})
+
+test.describe('check-answers feature — Copy as new carries the trade answers', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await openReviewFromHub(page)
+  })
+
+  test("Copy as new's review page shows the source's internal reference number", async ({
+    page
+  }) => {
+    await clickCopyAsNew(page)
+    await expectOverview(page)
+
+    await openReviewFromHub(page)
+
+    await expect(rowFor(page, copy.rows.internalReference)).toContainText(
+      values.internalReferenceNumber
+    )
   })
 })

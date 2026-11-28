@@ -11,6 +11,7 @@ import {
 import { journeySections } from '../../../../../../flow/journey-flow.js'
 import { pageGatePasses } from '../../../../../../flow/gates.js'
 import * as state from '../../../../../../engine/index.js'
+import { isAnswered } from '../../../../../../lib/answered.js'
 import { FULFILLED, NA } from '../../../../../../bridge/status/index.js'
 import { rowStatus } from '../../flow/task-rows.js'
 import { invalidRowIds } from '../../flow/stored-answers.js'
@@ -102,11 +103,17 @@ const toCount = (value) => {
 const sumOverLines = (lines, field) =>
   lines.reduce((total, { entry }) => total + toCount(entry[field]), 0)
 
+const packagesAnswered = (lines) =>
+  lines.some((line) => isAnswered(line.entry.numberOfPackages))
+
 const buildCommodityTotals = (answers, evaluation) => {
   const lines = state.collectionView(answers, ['commodityLines'], evaluation)
   return {
     animals: sumOverLines(lines, 'numberOfAnimalsQuantity'),
-    packages: sumOverLines(lines, 'numberOfPackages')
+    packages:
+      lines.length === 0 || packagesAnswered(lines)
+        ? sumOverLines(lines, 'numberOfPackages')
+        : undefined
   }
 }
 

@@ -47,6 +47,12 @@ Import and export the object in
 [`obligations/index.js`](../obligations/index.js), then
 add it to the `obligations` array.
 
+Add it to exactly one of `carriedOnCopy` (answers describing the trade,
+which a copy keeps) or `givenAgainOnCopy` (answers belonging to one
+shipment, which a copy clears), in the same file. An obligation on neither
+list, or on both,
+[`obligations/coverage.test.js`](../obligations/coverage.test.js) fails.
+
 Do not put a label, title, hint, legend, option or other display logic in the
 model. Obligations and domain code stay copy-free. Copy belongs to the feature.
 [`src/server/app/obligation-purity.js`](../../../obligation-purity.js) enforces this at boot.

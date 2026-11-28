@@ -17,7 +17,9 @@
       </div>
       <div class="govuk-grid-column-one-half govuk-!-margin-bottom-4">
         <section class="app-commodity-total" aria-label="{{ copy.commodityTotals.packagesRegionLabel }}">
-          <p class="app-commodity-total__value">{{ commodityTotals.packages }}</p>
+          {% if commodityTotals.packages is number %}
+            <p class="app-commodity-total__value">{{ commodityTotals.packages }}</p>
+          {% endif %}
           <h3 class="app-commodity-total__label">{{ copy.commodityTotals.packagesLabel }}</h3>
           <p class="app-commodity-total__caption">{{ copy.commodityTotals.packagesCaption }}</p>
         </section>

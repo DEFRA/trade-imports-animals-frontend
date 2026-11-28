@@ -513,23 +513,6 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     )
   })
 
-  it('Should show the cancel success indication only on the restored submitted view', async () => {
-    const submitted = await viewForStatus(
-      SUBMITTED,
-      withItahcUploaded(fullSeed),
-      {
-        cancelled: '1'
-      }
-    )
-    const draft = await viewForStatus(DRAFT, fullSeed, { cancelled: '1' })
-
-    expect(submitted.context.successBanner).toEqual({
-      titleText: copyEn.cancelAmend.successTitle,
-      text: copyEn.cancelAmend.successBody
-    })
-    expect(draft.context.successBanner).toBeNull()
-  })
-
   it('Should go Back to the dashboard from a submitted notification', async () => {
     const view = await viewForStatus(SUBMITTED, withItahcUploaded(fullSeed))
 
@@ -2895,7 +2878,7 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
       }))
 
       expect(controls.map(({ text }) => text)).toEqual(SUBMITTED_BUTTON_TEXTS)
-      expect(controls[0].formAction).toBe(actions.amend.postAction)
+      expect(controls[0].href).toBe(actions.amend.href)
       expect(controls[1].formAction).toBe(actions.copy.postAction)
       expect(controls[2].formAction).toBeUndefined()
       expect(controls[0].classes).not.toContain(SECONDARY_BUTTON_CLASS)
