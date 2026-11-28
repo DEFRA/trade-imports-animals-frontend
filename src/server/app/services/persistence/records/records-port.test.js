@@ -21,7 +21,7 @@ const submitAtLoadedToken = async (journeyId) => {
   return records.submit(journeyId, undefined, concurrencyToken)
 }
 
-describe('records durable port', () => {
+describe('records durable port — create and load', () => {
   beforeEach(() => records.clear())
 
   it('Should mint a GBN-AG-YY-XXXXXX reference as the journeyId', async () => {
@@ -49,6 +49,10 @@ describe('records durable port', () => {
     expect(journey.fulfilment).toEqual({})
     expect(journey).not.toHaveProperty('answers')
   })
+})
+
+describe('records durable port — replace fulfilment and submit', () => {
+  beforeEach(() => records.clear())
 
   it('Should whole-replace canonical fulfilment durably, with no submit', async () => {
     const { journeyId } = await records.create()
@@ -88,6 +92,10 @@ describe('records durable port', () => {
     const submitted = await submitAtLoadedToken(created.journeyId)
     expect(submitted.createdAt).toBe(created.createdAt)
   })
+})
+
+describe('records durable port — amend and cancel amend', () => {
+  beforeEach(() => records.clear())
 
   it('Should unfreeze on amend — status set to amend, submittedAt cleared, writes permitted', async () => {
     const { journeyId } = await records.create()
@@ -152,6 +160,10 @@ describe('records durable port', () => {
       /Unknown journey/
     )
   })
+})
+
+describe('records durable port — list', () => {
+  beforeEach(() => records.clear())
 
   it('Should keep listing session-scoped by requested journey ids', async () => {
     const first = await records.create()
@@ -212,8 +224,12 @@ describe('records durable port', () => {
       totalPages: 0
     })
   })
+})
 
-  it('Should copy source content into one new draft per idempotency key', async () => {
+describe('records durable port — copy', () => {
+  beforeEach(() => records.clear())
+
+  it('Should copy source content into one new draft per concurrencyToken', async () => {
     const source = await records.create()
     await records.replaceFulfilment(source.journeyId, originFulfilment('FR'))
 
@@ -230,7 +246,19 @@ describe('records durable port', () => {
     expect(deliberateSecond.journeyId).not.toBe(first.journeyId)
   })
 
-  it('Should scope copy idempotency to the source reference', async () => {
+  it('Should copy the submitted version while an amendment is open, not the edits in progress', async () => {
+    const { journeyId } = await records.create()
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
+    await submitAtLoadedToken(journeyId)
+    await records.amend(journeyId)
+    await records.replaceFulfilment(journeyId, originFulfilment('DE'))
+
+    const copied = await records.copy(journeyId, 'copy-key-amend')
+
+    expect(copied.fulfilment).toEqual(originFulfilment('FR'))
+  })
+
+  it('Should scope the copy dedupe by concurrencyToken to the source reference', async () => {
     const sourceA = await records.create()
     const sourceB = await records.create()
 
@@ -242,6 +270,10 @@ describe('records durable port', () => {
       records.copy(UNKNOWN_JOURNEY_ID, 'unknown-source-key')
     ).rejects.toThrow(/Unknown journey/)
   })
+})
+
+describe('records durable port — soft delete', () => {
+  beforeEach(() => records.clear())
 
   it('Should soft-delete idempotently and exclude the journey from lists', async () => {
     const journey = await records.create()

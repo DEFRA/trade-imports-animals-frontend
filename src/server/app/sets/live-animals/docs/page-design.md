@@ -34,7 +34,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Only "Consignment addresses" carries a hint. A row with no hint gets no hint
   slot, because `govukTaskList` draws an empty hint element for
   `{ text: undefined }`.
-- The commodity totals show from the first visit, reading zero.
+- The animals total is the sum of the lines' numbers of animals, so it
+  always shows a figure: zero both before any commodity line has been added
+  and once lines exist with none of them given a number of animals. The
+  packages total shows a figure the same way, except once the notification
+  has at least one commodity line and none of them holds a number of
+  packages, when it shows no figure at all.
 - The commodities block, the task list and each numbered section are regions
   named by their heading, and each total box is a region with a name of its
   own, so a screen reader can list the regions and jump between them. Each

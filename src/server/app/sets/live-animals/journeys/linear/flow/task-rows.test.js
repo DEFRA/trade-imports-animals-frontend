@@ -276,11 +276,12 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     expect(statusIn('animalIdentification', answers)).toBe(NOT_STARTED)
   })
 
-  it('Should complete the identification row on identifiers alone, leaving commodities In progress', () => {
+  it('Should complete the identification row on identifiers and its animal count, leaving commodities In progress', () => {
     const answers = {
       commodityLines: [
         {
           commodityCode: BOS_TAURUS_ROW.commodityCode,
+          numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         }
       ]
@@ -307,6 +308,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
       commodityLines: [
         {
           commodityCode: BOS_TAURUS_ROW.commodityCode,
+          numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         },
         { commodityCode: STRUTHIO_ROW.commodityCode }
@@ -320,6 +322,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
       commodityLines: [
         {
           ...FELIS_CATUS_ROW,
+          numberOfAnimalsQuantity: '1',
           animalIdentifiers: [identifier]
         }
       ]
@@ -355,6 +358,20 @@ describe('#rowStatus — the conditional animal-identification row', () => {
         commodityLines: [{ commodityCode: STRUTHIO_ROW.commodityCode }]
       })
     ).toBe(FULFILLED)
+  })
+
+  it('Should read other than Completed for a Bos taurus line whose identifier is given but whose animal count is not', () => {
+    expect(
+      statusIn('animalIdentification', {
+        countryOfOrigin: 'FR',
+        commodityLines: [
+          {
+            ...BOS_TAURUS_ROW,
+            animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+          }
+        ]
+      })
+    ).not.toBe(FULFILLED)
   })
 
   it('Should mark the animal-identification row conditional', () => {

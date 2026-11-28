@@ -23,6 +23,6 @@ const storeOf = (setId) => {
 /** The active set's journeys, by journey id. */
 export const journeys = () => storeOf(currentSetId()).journeys
 
-/** The active set's copy dedupe index, by source journey and idempotency key. */
+/** The active set's copy dedupe index, by source journey and concurrency token. */
 export const copiesBySourceAndKey = () =>
   storeOf(currentSetId()).copiesBySourceAndKey

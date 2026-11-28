@@ -18,17 +18,13 @@ import {
   signIn,
   startNotification,
   backLink,
-  expectDraftReview
+  expectDraftReview,
+  taskRow
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as commoditiesCopy } from '../commodities/copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
-
-const taskRow = (page, title) =>
-  page.getByRole('listitem').filter({
-    has: page.getByText(title, { exact: true })
-  })
 
 const ANIMALS = '25'
 const PACKAGES = '5'
@@ -105,11 +101,18 @@ const expectTotalBoxes = async (page, animals, packages) => {
   await expect(boxes.nth(1)).toHaveAccessibleName(
     copy.commodityTotals.packagesRegionLabel
   )
-  await expect(boxes.nth(1).locator('> *')).toHaveText([
-    packages,
-    copy.commodityTotals.packagesLabel,
-    copy.commodityTotals.packagesCaption
-  ])
+  await expect(boxes.nth(1).locator('> *')).toHaveText(
+    packages === null
+      ? [
+          copy.commodityTotals.packagesLabel,
+          copy.commodityTotals.packagesCaption
+        ]
+      : [
+          packages,
+          copy.commodityTotals.packagesLabel,
+          copy.commodityTotals.packagesCaption
+        ]
+  )
 }
 
 test.describe('hub feature', () => {
@@ -533,5 +536,13 @@ test.describe('hub feature — commodity totals', () => {
     ).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(page, 'Hub with commodity totals')
+  })
+
+  test('the Packages/boxes region shows no figure, and Animals reads 0, on a notification whose line holds no number of packages', async ({
+    page
+  }) => {
+    await openHubOwingTheCommodityNumbers(page)
+
+    await expectTotalBoxes(page, '0', null)
   })
 })

@@ -101,6 +101,11 @@ const headerButtonGroup = (page) =>
 
 const headerControls = (page) => formControls(headerButtonGroup(page))
 
+const clickCopyAsNew = (page) =>
+  headerControls(page)
+    .getByText(sharedCopy.notificationActions.copy.text, { exact: true })
+    .click()
+
 const headerFormSubmittedBy = (page, buttonName) =>
   formSubmittedBy(
     headerButtonGroup(page).getByRole('button', {
@@ -1136,9 +1141,7 @@ test.describe('check-answers feature draft notification reached from Review and 
   }) => {
     const reference = journeyIdFromPage(page)
 
-    await headerControls(page)
-      .getByText(sharedCopy.notificationActions.copy.text, { exact: true })
-      .click()
+    await clickCopyAsNew(page)
 
     await expectOverview(page)
     expect(journeyIdFromPage(page)).not.toBe(reference)
@@ -1613,5 +1616,27 @@ test.describe('check-answers feature amendment review after a cancelled amendmen
       page.getByRole('heading', { level: 1, name: copy.title })
     ).toBeVisible()
     await expect(page).toHaveTitle(new RegExp(`^${copy.title}`))
+  })
+})
+
+test.describe('check-answers feature — Copy as new carries the trade answers', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await openReviewFromHub(page)
+  })
+
+  test("Copy as new's review page shows the source's internal reference number", async ({
+    page
+  }) => {
+    await clickCopyAsNew(page)
+    await expectOverview(page)
+
+    await openReviewFromHub(page)
+
+    await expect(rowFor(page, copy.rows.internalReference)).toContainText(
+      values.internalReferenceNumber
+    )
   })
 })

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { obligations } from './index.js'
+import { carriedOnCopy, givenAgainOnCopy, obligations } from './index.js'
 import { obligationMetadata } from '../../../model/obligations/helpers/index.js'
 
 // Guard against a self-loop or a cycle hanging buildAncestorGroups' `while
@@ -143,5 +143,28 @@ describe('coverage — every gated obligation carries (or derives) dependsOn', (
       })
       .map((o) => o.name)
     expect(missing).toEqual([])
+  })
+})
+
+describe('coverage — every obligation is on exactly one of the two copy lists', () => {
+  it('appears on carriedOnCopy or givenAgainOnCopy, and never both', () => {
+    const names = obligations.map((obligation) => obligation.name)
+    const onNeither = names.filter(
+      (name) =>
+        !carriedOnCopy.includes(name) && !givenAgainOnCopy.includes(name)
+    )
+    const onBoth = names.filter(
+      (name) => carriedOnCopy.includes(name) && givenAgainOnCopy.includes(name)
+    )
+
+    expect(onNeither).toEqual([])
+    expect(onBoth).toEqual([])
+  })
+
+  it('names only obligations that exist on the manifest', () => {
+    const names = new Set(obligations.map((obligation) => obligation.name))
+
+    expect(carriedOnCopy.filter((name) => !names.has(name))).toEqual([])
+    expect(givenAgainOnCopy.filter((name) => !names.has(name))).toEqual([])
   })
 })

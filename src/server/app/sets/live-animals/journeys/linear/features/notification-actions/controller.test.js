@@ -33,19 +33,20 @@ const emptyNotificationList = JSON.stringify({
   content: []
 })
 
+const defaultCopyBackendBody = (request) =>
+  request.url.endsWith('/fulfilments')
+    ? backendNotification({
+        status: 'SUBMITTED',
+        submittedAt: '2026-07-23T10:00:00Z'
+      })
+    : emptyNotificationList
+
 const backendAnsweringCopyWith = (copyResponse) =>
   fetchMock.mockResponse(async (request) => {
     if (request.url.includes('/copy')) {
       return copyResponse()
     }
-    return {
-      body: request.url.endsWith('/fulfilments')
-        ? backendNotification({
-            status: 'SUBMITTED',
-            submittedAt: '2026-07-23T10:00:00Z'
-          })
-        : emptyNotificationList
-    }
+    return { body: defaultCopyBackendBody(request) }
   })
 
 describe('copy notification action', () => {
@@ -129,6 +130,45 @@ describe('copy notification action', () => {
         'live-animals/journeys/linear/features/dashboard/template'
       )
       expect(response.context.recoverableError).toBe(true)
+    })
+
+    it('Should re-render the source notification view at 500, under the source reference, when a copy started from the notification view fails to carry its answers', async () => {
+      fetchMock.mockResponse(async (request) => {
+        if (request.url.includes('/copy')) {
+          return {
+            body: JSON.stringify({
+              referenceNumber: 'GBN-AG-26-COPY999',
+              fulfilments: [],
+              status: 'DRAFT',
+              created: '2026-07-23T10:05:00Z',
+              concurrencyToken: 0
+            })
+          }
+        }
+        if (request.method === 'PUT') {
+          return {
+            body: 'Unavailable',
+            status: 503,
+            statusText: 'Service Unavailable'
+          }
+        }
+        if (request.url.includes('/soft-delete')) {
+          return { body: backendNotification({ status: 'DELETED' }) }
+        }
+        return { body: defaultCopyBackendBody(request) }
+      })
+
+      const request = journeyRequest(backendJourneyId, {
+        payload: { ...copyPayload, copyOrigin: 'notification-view' }
+      })
+      const response = await copyWithOrganisation(request, stubH())
+
+      expect(response.statusCode).toBe(500)
+      expect(response.view).toBe(
+        'live-animals/journeys/linear/features/check-answers/template'
+      )
+      expect(response.context.recoverableError).toBe(true)
+      expect(response.context.viewHeader.reference).toBe(backendJourneyId)
     })
 
     it('Should redirect to the dashboard with ?staleAction=1 on 409 STALE_CONCURRENCY_TOKEN from copy', async () => {

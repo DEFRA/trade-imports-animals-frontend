@@ -178,3 +178,60 @@ export const obligations = [
 export const groups = obligations.filter((obligation) =>
   obligations.some((other) => other.within === obligation)
 )
+
+export const carriedOnCopy = [
+  poApprovedReferenceNumber,
+  countryOfOrigin,
+  countryOfOriginSubdivisionCode,
+  regionCodeRequirement,
+  regionCode,
+  internalReferenceNumber,
+  reasonForImport,
+  purposeInInternalMarket,
+  destinationCountry,
+  portOfExit,
+  exitDate,
+  containsUnweanedAnimals,
+  animalsCertifiedFor,
+  commodityLine,
+  commodityCode,
+  speciesLatinName,
+  speciesCommonName,
+  cph,
+  placeOfOrigin,
+  consignor,
+  consignee,
+  importer,
+  placeOfDestination
+].map((obligation) => obligation.name)
+
+export const givenAgainOnCopy = [
+  numberOfAnimals,
+  numberOfPackages,
+  unitRecord,
+  microchip,
+  passport,
+  tattoo,
+  earTag,
+  horseName,
+  identificationDetails,
+  description,
+  permanentAddress,
+  permanentAddressOrigin,
+  portOfEntry,
+  arrivalDateAtPort,
+  meansOfTransport,
+  transportIdentification,
+  transportDocumentReference,
+  transitedCountries,
+  transporterType,
+  commercialTransporter,
+  privateTransporter,
+  documents,
+  accompanyingDocumentType,
+  accompanyingDocumentAttachmentType,
+  accompanyingDocumentReference,
+  accompanyingDocumentDateOfIssue,
+  documentUploadId,
+  documentFilename
+].map((obligation) => obligation.name)
