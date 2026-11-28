@@ -2878,7 +2878,7 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
       }))
 
       expect(controls.map(({ text }) => text)).toEqual(SUBMITTED_BUTTON_TEXTS)
-      expect(controls[0].formAction).toBe(actions.amend.postAction)
+      expect(controls[0].href).toBe(actions.amend.href)
       expect(controls[1].formAction).toBe(actions.copy.postAction)
       expect(controls[2].formAction).toBeUndefined()
       expect(controls[0].classes).not.toContain(SECONDARY_BUTTON_CLASS)

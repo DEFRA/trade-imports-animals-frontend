@@ -38,7 +38,10 @@ describe('#auditPaths', () => {
     const paths = auditPaths(journeyIds)
 
     expect(paths.filter((path) => path.includes(journeyIds.submitted))).toEqual(
-      [`${SET_BASE}/notifications/${journeyIds.submitted}/confirmation`]
+      [
+        `${SET_BASE}/notifications/${journeyIds.submitted}/amend`,
+        `${SET_BASE}/notifications/${journeyIds.submitted}/confirmation`
+      ]
     )
     expect(paths.filter((path) => path.includes(journeyIds.transit))).toEqual([
       `${SET_BASE}/notifications/${journeyIds.transit}/transporters/add/private`

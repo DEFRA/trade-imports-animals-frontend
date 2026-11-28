@@ -39,7 +39,7 @@ const amendAction = (journey) =>
   journey.status === SUBMITTED
     ? {
         text: copy.viewHeader.amend,
-        postAction: pagePath(journey.journeyId, notificationActionSlugs.amend)
+        href: pagePath(journey.journeyId, notificationActionSlugs.amend)
       }
     : null
 

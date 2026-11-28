@@ -30,6 +30,7 @@ import { commodityLabel } from '../src/server/app/sets/live-animals/journeys/lin
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as additionalDetailsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.en.js'
 import { copy as addressesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.en.js'
+import { copy as amendCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/amend/copy/copy.en.js'
 import { copy as checkAnswersCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
 import { copy as dashboardCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/dashboard/copy/copy.en.js'
@@ -735,6 +736,11 @@ const startNotificationWithOriginAnswered = async (page) => {
  */
 export const expectOverview = (page) =>
   expect(page.getByRole('heading', { name: hubCopy.title })).toBeVisible()
+
+export const expectNotificationListOpen = (page) =>
+  expect(
+    page.getByRole('heading', { name: dashboardCopy.notificationsHeading })
+  ).toBeVisible()
 
 export const taskRow = (page, title) =>
   page.getByRole('listitem').filter({
@@ -1715,8 +1721,12 @@ export const submitCompleteNotification = async (
 export const amendFromList = async (page, reference) => {
   await page.goto(BASE)
   await page
-    .getByRole('button', { name: `Amend notification ${reference}` })
+    .getByRole('link', { name: `Amend notification ${reference}` })
     .click()
+  await expect(
+    page.getByRole('heading', { name: amendCopy.title, level: 1 })
+  ).toBeVisible()
+  await page.getByRole('button', { name: amendCopy.confirmButton }).click()
 }
 
 /**

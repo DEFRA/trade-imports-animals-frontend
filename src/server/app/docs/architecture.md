@@ -78,7 +78,9 @@ and sends any other notification on a guarded path to the journey's entry page.
 On a guarded path, the guard itself answers a notification that cannot be found
 with the service's standard page not found (404), on every page, the review
 included, before any page runs, and sends nothing to the entry page or the
-notification list. An exempt path's own page answers not found the same way.
+notification list. Of the exempt paths, cancel-amend and delete answer a
+reference they cannot find with the same standard page not found; the amend
+page and the copy post open the set's own notification list.
 Journeys may use their own set and L2 APIs. They do not import another journey or
 another set.
 

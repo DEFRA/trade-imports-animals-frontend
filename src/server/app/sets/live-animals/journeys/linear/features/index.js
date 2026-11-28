@@ -20,6 +20,7 @@ import * as transporterAdd from './transport/transporter-add/transporter-add.con
 import * as commercialTransporterDetails from './transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details/private-transporter-details.controller.js'
 import * as cya from './check-answers/controller.js'
+import * as amend from './amend/controller.js'
 import * as cancelAmend from './cancel-amend/controller.js'
 import * as notificationActions from './notification-actions/controller.js'
 import * as deleteNotification from './delete-notification/controller.js'
@@ -67,6 +68,7 @@ export const allRoutes = [
   ...commercialTransporterDetails.routes,
   ...privateTransporterDetails.routes,
   ...cya.routes,
+  ...amend.routes,
   ...cancelAmend.routes,
   ...notificationActions.routes,
   ...deleteNotification.routes,

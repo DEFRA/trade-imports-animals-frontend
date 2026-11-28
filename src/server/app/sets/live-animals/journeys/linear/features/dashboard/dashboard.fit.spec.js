@@ -12,6 +12,7 @@ import {
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
+import { copy as amendCopy } from '../amend/copy/copy.en.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as hubCopy } from '../hub/copy/copy.en.js'
 
@@ -35,7 +36,7 @@ const actionFor = (page, role, action, reference) =>
 const expectSubmittedRowActions = async (page, reference) => {
   await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
   await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
-  await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
+  await expect(actionFor(page, 'link', 'Amend', reference)).toBeVisible()
   await expect(actionFor(page, 'button', COPY_AS_NEW, reference)).toBeVisible()
   await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
 }
@@ -174,7 +175,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
     ).toBeVisible()
     await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
     await expect(actionFor(page, 'link', 'View', reference)).toHaveCount(0)
-    await expect(actionFor(page, 'button', 'Amend', reference)).toHaveCount(0)
+    await expect(actionFor(page, 'link', 'Amend', reference)).toHaveCount(0)
   })
 
   test('Resume on a draft notification opens its Overview', async ({
@@ -215,7 +216,11 @@ test.describe('dashboard feature — notification rows and actions', () => {
   }) => {
     test.slow()
     const reference = await stageSubmittedNotification(page)
-    await actionFor(page, 'button', 'Amend', reference).click()
+    await actionFor(page, 'link', 'Amend', reference).click()
+    await expect(
+      page.getByRole('heading', { name: amendCopy.title, level: 1 })
+    ).toBeVisible()
+    await page.getByRole('button', { name: amendCopy.confirmButton }).click()
     await expect(
       page.getByRole('heading', { name: checkAnswersCopy.title })
     ).toBeVisible()
@@ -436,25 +441,5 @@ test.describe('dashboard feature — accessibility', () => {
       page,
       'Dashboard with notification cards'
     )
-  })
-})
-
-test.describe('dashboard feature — amend refused banner', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-    await page.goto(`${BASE}?amendRefused=1`)
-  })
-
-  test('renders the could-not-amend banner with its title and body', async ({
-    page
-  }) => {
-    const banner = page.getByRole('region', { name: copy.amendRefused.title })
-
-    await expect(banner).toBeVisible()
-    await expect(banner).toContainText(copy.amendRefused.body)
-  })
-
-  test('has no serious or critical axe violations', async ({ page }) => {
-    await expectNoSeriousOrCriticalViolations(page, 'Amend refused banner')
   })
 })

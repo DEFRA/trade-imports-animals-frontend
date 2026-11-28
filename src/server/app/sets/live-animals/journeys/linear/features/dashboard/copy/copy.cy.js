@@ -52,10 +52,6 @@ export const copy = {
     resume: 'Ailddechrau',
     cancelAmend: 'Canslo diwygiad'
   },
-  amendRefused: {
-    title: 'Pwysig',
-    body: 'Nid oedd modd diwygio’r hysbysiad hwn.'
-  },
   actionHidden: (reference) => `hysbysiad ${reference}`,
   emptyText: 'Nid ydych wedi dechrau unrhyw hysbysiadau yn y sesiwn hon.'
 }

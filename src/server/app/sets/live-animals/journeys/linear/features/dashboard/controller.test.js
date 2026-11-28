@@ -5,7 +5,6 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   configureRecords,
   records,
-  AMEND,
   DELETED
 } from '../../../../../../engine/persistence/records.js'
 import {
@@ -52,7 +51,6 @@ const handlerOf = (method, pathSuffix) =>
   ).handler
 
 const listGet = handlerOf('GET', '/')
-const amendPost = handlerOf('POST', '/amend')
 const createPost = routes.find(
   (route) => route.method === 'POST' && route.path === createRoutePath()
 ).handler
@@ -73,18 +71,6 @@ const renderList = async (overrides = {}) => {
   const h = stubH(request)
   await listGet(request, h)
   return h.captured.view.context
-}
-
-const expectAmendOpenedAtReview = async (journeyId, response) => {
-  expect(response.redirect).toBe(pagePathFrom('dashboard', journeyId, CYA_SLUG))
-  expect((await records.load({ journeyId })).status).toBe(AMEND)
-}
-
-const postAmend = async (journeyId, overrides = {}) => {
-  const request = journeyRequest(journeyId, overrides)
-  const h = stubH(request)
-  const response = await amendPost(request, h)
-  return { response, h, request }
 }
 
 beforeAll(() => {
@@ -148,9 +134,7 @@ describe('dashboard notifications list', () => {
     expect(row.actions[0].href).toBe(
       pagePathFrom('dashboard', submitted.journeyId, CYA_SLUG)
     )
-    expect(row.actions[1].postAction).toBe(
-      pageUrl(submitted.journeyId, 'amend')
-    )
+    expect(row.actions[1].href).toBe(pageUrl(submitted.journeyId, 'amend'))
     expect(row.actions[2].postAction).toBe(pageUrl(submitted.journeyId, 'copy'))
     expect(row.actions[3].href).toBe(pageUrl(submitted.journeyId, 'delete'))
   })
@@ -307,25 +291,9 @@ describe('dashboard row actions', () => {
     expect(routes.some((route) => route.path.endsWith('/view'))).toBe(false)
   })
 
-  it('Should amend a known submitted journey — unfrozen, opened at the review page, writable again', async () => {
-    const submitted = await startSubmitted()
-
-    const { response } = await postAmend(submitted.journeyId)
-
-    expect(response.redirect).toBe(
-      pagePathFrom('dashboard', submitted.journeyId, CYA_SLUG)
-    )
-    const amended = await records.load({ journeyId: submitted.journeyId })
-    expect(amended.status).toBe(AMEND)
-    await records.replaceFulfilment(
-      submitted.journeyId,
-      assembleFulfilments({ countryOfOrigin: 'FR' })
-    )
-  })
-
   it('Should list an amending journey with a yellow Amend tag', async () => {
     const submitted = await startSubmitted()
-    await postAmend(submitted.journeyId)
+    await records.amend(submitted.journeyId)
 
     const context = await renderList({ knownJourneyIds: [submitted.journeyId] })
 
@@ -343,37 +311,6 @@ describe('dashboard row actions', () => {
     ])
     expect(row.actions[2].href).toBe(
       pageUrl(submitted.journeyId, 'cancel-amend')
-    )
-  })
-
-  it('Should treat a repeated amend POST as a plain re-entry, not an error', async () => {
-    const submitted = await startSubmitted()
-    await postAmend(submitted.journeyId)
-
-    const { response } = await postAmend(submitted.journeyId)
-
-    await expectAmendOpenedAtReview(submitted.journeyId, response)
-  })
-
-  it('Should open an amend for a submitted journey the session does not know at its review page and leave it amending', async () => {
-    const submitted = await startSubmitted()
-
-    const { response } = await postAmend(submitted.journeyId, {
-      knownJourneyIds: []
-    })
-
-    await expectAmendOpenedAtReview(submitted.journeyId, response)
-  })
-
-  it('Should send an amend for a deleted journey back to the dashboard carrying the amend-refused flag', async () => {
-    const deleted = await records.create()
-    await records.softDelete(deleted.journeyId)
-
-    const { response } = await postAmend(deleted.journeyId)
-
-    expect(response.redirect).toBe(`${SET_BASE}?amendRefused=1`)
-    expect((await records.load({ journeyId: deleted.journeyId })).status).toBe(
-      DELETED
     )
   })
 
@@ -402,14 +339,6 @@ describe('dashboard row actions', () => {
       titleText: sharedEn.notificationActions.delete.successTitle,
       text: sharedEn.notificationActions.delete.successBody
     })
-  })
-
-  it('Should expose the amend-refused banner only after a refused-amend redirect', async () => {
-    const ordinary = await renderList()
-    const refused = await renderList({ query: { amendRefused: '1' } })
-
-    expect(ordinary.amendRefused).toBe(false)
-    expect(refused.amendRefused).toBe(true)
   })
 })
 
@@ -466,33 +395,6 @@ describe.each([
     })
   }
 )
-
-describe('dashboard amend', () => {
-  it('Should open the review page when an existing notification is amended', async () => {
-    const submitted = await startSubmitted()
-
-    const { response } = await postAmend(submitted.journeyId)
-
-    expect(response.redirect).toBe(
-      pagePathFrom('dashboard', submitted.journeyId, CYA_SLUG)
-    )
-  })
-
-  it('Should log the started amendment once with the journey and its organisation', async () => {
-    const submitted = await startSubmitted()
-
-    const { request } = await postAmend(submitted.journeyId)
-
-    expectOneLogged(request.logger, {
-      level: 'info',
-      fields: {
-        journeyId: submitted.journeyId,
-        organisationId: authenticatedActor.organisationId
-      },
-      message: 'Amendment started'
-    })
-  })
-})
 
 describe('dashboard start entry', () => {
   it('Should forbid caching the start response', async () => {

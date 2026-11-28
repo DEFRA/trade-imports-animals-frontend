@@ -40,7 +40,7 @@ export const rowActions = (journey) => {
       },
       {
         text: copy.actions.amend,
-        postAction: pagePath(journey.journeyId, notificationActionSlugs.amend)
+        href: pagePath(journey.journeyId, notificationActionSlugs.amend)
       },
       copyAction,
       deleteAction

@@ -195,32 +195,40 @@ describe('#amendJourney', () => {
     expect(h.cookies[knownJourneysCookie()]).toEqual([journeyId])
   })
 
-  it('Should refuse a deleted notification, leave it deleted and log the refusal once with its status', async () => {
-    const journey = await store.create()
-    await recordsStub.softDelete(journey.journeyId)
-    const request = journeyRequest(journey.journeyId, {
-      knownJourneyIds: [journey.journeyId]
-    })
+  const expectAmendRefusedWithStatus = async (journeyId, status) => {
+    const request = journeyRequest(journeyId, { knownJourneyIds: [journeyId] })
 
-    const editable = await amendJourney(
-      request,
-      recordingH(),
-      journey.journeyId
-    )
+    const editable = await amendJourney(request, recordingH(), journeyId)
 
     expect(editable).toBeUndefined()
-    expect((await store.get(journey.journeyId)).status).toBe('deleted')
+    expect((await store.get(journeyId)).status).toBe(status)
     expect(request.logger.entries).toEqual([
       {
         level: 'info',
-        fields: {
-          journeyId: journey.journeyId,
-          reason: 'not-editable',
-          status: 'deleted'
-        },
+        fields: { journeyId, reason: 'not-editable', status },
         message: 'Amend refused'
       }
     ])
+  }
+
+  it('Should refuse a deleted notification, leave it deleted and log the refusal once with its status', async () => {
+    const journey = await store.create()
+    await recordsStub.softDelete(journey.journeyId)
+
+    await expectAmendRefusedWithStatus(journey.journeyId, 'deleted')
+  })
+
+  it('Should refuse a draft notification, leave it draft and log the refusal once with its status', async () => {
+    const journey = await store.create()
+
+    await expectAmendRefusedWithStatus(journey.journeyId, 'draft')
+  })
+
+  it('Should refuse a notification already being amended, leave it in Amend and log the refusal once with its status', async () => {
+    const journeyId = await submittedJourney()
+    await recordsStub.amend(journeyId)
+
+    await expectAmendRefusedWithStatus(journeyId, 'amend')
   })
 })
 
